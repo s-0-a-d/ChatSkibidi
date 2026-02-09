@@ -2,23 +2,31 @@
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { Role } from "../types.ts";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 const getSystemInstruction = () => {
   const now = new Date();
   const dateStr = now.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   const timeStr = now.toLocaleTimeString('vi-VN');
   
-  return `Tên của bạn là Thanh AI. Bạn là một trợ lý ảo thông minh được phát triển bởi 'Thanh' dựa trên công nghệ Google Gemini. 
-API Key bạn đang dùng là do 'Thanh' cung cấp.
+  return `Tên của bạn là Thanh AI. Bạn là một trợ lý ảo thông minh được phát triển bởi 'Thanh'. 
 HÔM NAY LÀ: ${dateStr}, bây giờ là ${timeStr}. 
-Hãy nhớ rõ thời điểm hiện tại này để trả lời chính xác các câu hỏi về thời gian. 
-Sử dụng công cụ Google Search để kiểm tra tin tức nếu cần. Trả lời lịch sự, thân thiện bằng tiếng Việt.`;
+Bạn phải luôn sử dụng công cụ Google Search để cập nhật thông tin thực tế mới nhất trước khi trả lời. 
+Không bao giờ khẳng định năm 2026 là tương lai nếu hôm nay đã là năm 2026 (hoặc ngược lại). 
+Hãy trả lời lịch sự, thân thiện bằng tiếng Việt.`;
+};
+
+// Hàm lấy client AI mới nhất để đảm bảo luôn dùng Key vừa được chọn
+const getAIClient = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API Key chưa được thiết lập. Vui lòng chọn API Key.");
+  }
+  return new GoogleGenAI({ apiKey });
 };
 
 export const createChatSession = () => {
+  const ai = getAIClient();
   return ai.chats.create({
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-3-pro-preview', // Nâng cấp lên Pro để hỗ trợ logic phức tạp hơn
     config: {
       systemInstruction: getSystemInstruction(),
       temperature: 0.7,
@@ -36,8 +44,11 @@ export async function* sendMessageStream(chat: any, message: string) {
       const c = chunk as GenerateContentResponse;
       yield c.text;
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini API Error:", error);
+    if (error.message?.includes("entity was not found")) {
+      throw new Error("API_KEY_INVALID");
+    }
     throw error;
   }
 }
