@@ -41,78 +41,45 @@
             animation: fadeIn 0.3s ease-out forwards;
         }
         
-        /* Markdown Styling override */
-        .prose {
-            max-width: none;
-            font-size: inherit;
-            line-height: inherit;
-        }
-        .prose p {
-            margin-top: 0;
-            margin-bottom: 0.5rem;
-        }
-        .prose p:last-child {
-            margin-bottom: 0;
-        }
-        .prose h1, .prose h2, .prose h3 {
-            margin-top: 1rem;
-            margin-bottom: 0.5rem;
-            font-weight: 700;
-        }
-        .prose h1 { font-size: 1.25rem; }
-        .prose h2 { font-size: 1.15rem; }
-        .prose h3 { font-size: 1.05rem; }
-        .prose ul, .prose ol {
-            margin-top: 0.5rem;
-            margin-bottom: 0.5rem;
-            padding-left: 1.25rem;
-        }
-        .prose li {
-            margin-bottom: 0.25rem;
-        }
-        .prose code {
-            background-color: rgba(0,0,0,0.05);
-            padding: 0.2rem 0.4rem;
-            border-radius: 4px;
-            font-family: 'Fira Code', monospace;
-            font-size: 0.9em;
-        }
-        .message-bubble-user .prose code {
-            background-color: rgba(255,255,255,0.2);
-            color: white;
-        }
-        .prose pre {
-            background-color: #111827;
-            color: #e5e7eb;
-            padding: 0;
-            border-radius: 8px;
-            overflow: hidden;
-            margin: 0.75rem 0;
-            position: relative;
-        }
-        .prose pre code {
-            background-color: transparent;
-            padding: 1rem;
-            display: block;
-            color: inherit;
-            overflow-x: auto;
-        }
+        .prose { max-width: none; font-size: inherit; line-height: inherit; }
+        .prose p { margin-top: 0; margin-bottom: 0.5rem; }
+        .prose p:last-child { margin-bottom: 0; }
+        .prose h1, .prose h2, .prose h3 { margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 700; }
+        .prose ul, .prose ol { margin-top: 0.5rem; margin-bottom: 0.5rem; padding-left: 1.25rem; }
+        .prose code { background-color: rgba(0,0,0,0.05); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Fira Code', monospace; font-size: 0.9em; }
+        .message-bubble-user .prose code { background-color: rgba(255,255,255,0.2); color: white; }
+        .prose pre { background-color: #111827; color: #e5e7eb; padding: 0; border-radius: 8px; overflow: hidden; margin: 0.75rem 0; position: relative; }
+        .prose pre code { background-color: transparent; padding: 1rem; display: block; color: inherit; overflow-x: auto; }
     </style>
-<script type="importmap">
+    <script type="importmap">
 {
   "imports": {
     "@google/genai": "https://esm.sh/@google/genai@^1.40.0",
-    "react/": "https://esm.sh/react@^19.2.4/",
     "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "react-markdown": "https://esm.sh/react-markdown@^9.0.0"
+    "react-dom/client": "https://esm.sh/react-dom@^19.2.4/client",
+    "react-markdown": "https://esm.sh/react-markdown@^9.0.0",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/"
   }
 }
 </script>
 </head>
 <body>
     <div id="root"></div>
-    <!-- Cần script type="module" để nạp file index.tsx chính -->
+    <!-- Script bảo vệ để hiện lỗi nếu app chết -->
+    <script>
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            const root = document.getElementById('root');
+            if (root && root.innerHTML === "") {
+                root.innerHTML = `<div style="padding: 20px; color: red; font-family: sans-serif;">
+                    <h2>Ứng dụng không thể khởi động</h2>
+                    <p>Lỗi: ${msg}</p>
+                    <p>Có thể do GitHub không hỗ trợ chạy trực tiếp file .tsx. Hãy đảm bảo bạn đang dùng môi trường có trình biên dịch.</p>
+                </div>`;
+            }
+            return false;
+        };
+    </script>
     <script type="module" src="./index.tsx"></script>
 </body>
 </html>

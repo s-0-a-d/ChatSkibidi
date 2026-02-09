@@ -1,20 +1,18 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { createChatSession, sendMessageStream } from './services/gemini';
-import { Message, Role } from './types';
-import ChatMessage from './components/ChatMessage';
-import ChatInput from './components/ChatInput';
+import { createChatSession, sendMessageStream } from './services/gemini.ts';
+import { Message, Role } from './types.ts';
+import ChatMessage from './components/ChatMessage.tsx';
+import ChatInput from './components/ChatInput.tsx';
 
-const STORAGE_KEY = 'gemini_chat_history';
+const STORAGE_KEY = 'thanh_ai_chat_history';
 
 const App: React.FC = () => {
-  // Load initial messages from localStorage or use default welcome message
   const [messages, setMessages] = useState<Message[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Convert ISO strings back to Date objects
         return parsed.map((m: any) => ({
           ...m,
           timestamp: new Date(m.timestamp)
@@ -27,7 +25,7 @@ const App: React.FC = () => {
       {
         id: 'welcome',
         role: Role.MODEL,
-        text: 'Xin chào! Tôi là **Thanh AI**. Tôi được phát triển bởi **Thanh** dựa trên công nghệ của Google. Tôi có thể giúp gì cho bạn hôm nay?',
+        text: 'Xin chào! Tôi là **Thanh AI**. Hôm nay là ngày ' + new Date().toLocaleDateString('vi-VN') + '. Tôi được phát triển bởi **Thanh** và luôn sẵn sàng hỗ trợ bạn!',
         timestamp: new Date(),
       }
     ];
@@ -38,12 +36,10 @@ const App: React.FC = () => {
   const chatSessionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Initialize chat session once and restore context if needed
   useEffect(() => {
     chatSessionRef.current = createChatSession();
   }, []);
 
-  // Persist messages to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   }, [messages]);
@@ -93,10 +89,11 @@ const App: React.FC = () => {
         );
       }
     } catch (err: any) {
-      setError('Đã có lỗi xảy ra khi kết nối với AI. Vui lòng thử lại.');
+      console.error(err);
+      setError('Lỗi kết nối. Hãy thử lại.');
       setMessages(prev => 
         prev.map(msg => 
-          msg.id === aiMessageId ? { ...msg, text: 'Rất tiếc, đã có lỗi xảy ra. Hãy kiểm tra kết nối mạng hoặc thử lại sau.' } : msg
+          msg.id === aiMessageId ? { ...msg, text: 'Rất tiếc, tôi đang gặp khó khăn khi kết nối. Hãy thử lại sau giây lát.' } : msg
         )
       );
     } finally {
@@ -105,22 +102,18 @@ const App: React.FC = () => {
   };
 
   const clearChat = () => {
-    const resetMessages = [
-      {
-        id: 'welcome',
-        role: Role.MODEL,
-        text: 'Đã xóa lịch sử trò chuyện. Tôi là **Thanh AI**, tôi có thể giúp gì mới cho bạn?',
-        timestamp: new Date(),
-      }
-    ];
-    setMessages(resetMessages);
+    setMessages([{
+      id: 'welcome',
+      role: Role.MODEL,
+      text: 'Đã làm mới cuộc hội thoại. Tôi là **Thanh AI**, bạn muốn hỏi gì tôi nào?',
+      timestamp: new Date(),
+    }]);
     localStorage.removeItem(STORAGE_KEY);
     chatSessionRef.current = createChatSession();
   };
 
   return (
     <div className="flex flex-col h-screen max-h-screen bg-gray-50 overflow-hidden">
-      {/* Header */}
       <header className="bg-white border-b border-gray-100 py-3 px-6 shadow-sm z-10">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -131,49 +124,34 @@ const App: React.FC = () => {
               <h1 className="text-lg font-bold text-gray-900 leading-tight">Thanh AI</h1>
               <div className="flex items-center">
                 <span className="w-2 h-2 bg-emerald-500 rounded-full mr-2"></span>
-                <span className="text-xs text-gray-500 font-medium">Trực tuyến</span>
+                <span className="text-xs text-gray-500 font-medium">Đang hoạt động</span>
               </div>
             </div>
           </div>
-          
-          <div className="flex items-center space-x-2">
-             <button 
-              onClick={clearChat}
-              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex items-center space-x-1"
-              title="Xóa lịch sử"
-            >
-              <i className="fa-solid fa-trash-can text-sm"></i>
-              <span className="text-xs font-medium hidden sm:inline">Xóa hội thoại</span>
-            </button>
-          </div>
+          <button onClick={clearChat} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
+            <i className="fa-solid fa-trash-can"></i>
+          </button>
         </div>
       </header>
 
-      {/* Main Chat Area */}
-      <main className="flex-1 overflow-y-auto custom-scrollbar bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-opacity-5">
-        <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-2">
+      <main className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50/50">
+        <div className="max-w-4xl mx-auto p-4 md:p-8">
           {messages.map((message) => (
             <ChatMessage key={message.id} message={message} />
           ))}
           {isTyping && (
-            <div className="flex justify-start mb-6 animate-pulse">
-               <div className="bg-white border border-gray-200 px-4 py-3 rounded-2xl rounded-tl-none shadow-sm flex items-center space-x-1">
-                 <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
-                 <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
-                 <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+            <div className="flex justify-start mb-6">
+               <div className="bg-white border border-gray-200 px-4 py-2 rounded-2xl rounded-tl-none flex items-center space-x-1">
+                 <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce"></div>
+                 <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                 <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce [animation-delay:0.4s]"></div>
                </div>
-            </div>
-          )}
-          {error && (
-            <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-2 rounded-lg text-sm text-center">
-              {error}
             </div>
           )}
           <div ref={messagesEndRef} />
         </div>
       </main>
 
-      {/* Footer Input Area */}
       <ChatInput onSendMessage={handleSendMessage} disabled={isTyping} />
     </div>
   );
