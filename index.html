@@ -52,29 +52,32 @@
         .prose pre code { background-color: transparent; padding: 1rem; display: block; color: inherit; overflow-x: auto; }
     </style>
     <script type="importmap">
-{
-  "imports": {
-    "@google/genai": "https://esm.sh/@google/genai@^1.40.0",
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/client": "https://esm.sh/react-dom@^19.2.4/client",
-    "react-markdown": "https://esm.sh/react-markdown@^9.0.0",
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/"
-  }
-}
-</script>
+    {
+      "imports": {
+        "@google/genai": "https://esm.sh/@google/genai@^1.40.0",
+        "react": "https://esm.sh/react@^19.2.4",
+        "react-dom/client": "https://esm.sh/react-dom@^19.2.4/client",
+        "react-markdown": "https://esm.sh/react-markdown@^9.0.0",
+        "react/": "https://esm.sh/react@^19.2.4/",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.4/"
+      }
+    }
+    </script>
 </head>
 <body>
     <div id="root"></div>
-    <!-- Script bảo vệ để hiện lỗi nếu app chết -->
     <script>
+        // Cung cấp một shim nhỏ cho process.env nếu chạy trên môi trường tĩnh như GitHub
+        if (typeof process === 'undefined') {
+            window.process = { env: {} };
+        }
+        
         window.onerror = function(msg, url, lineNo, columnNo, error) {
             const root = document.getElementById('root');
             if (root && root.innerHTML === "") {
-                root.innerHTML = `<div style="padding: 20px; color: red; font-family: sans-serif;">
-                    <h2>Ứng dụng không thể khởi động</h2>
-                    <p>Lỗi: ${msg}</p>
-                    <p>Có thể do GitHub không hỗ trợ chạy trực tiếp file .tsx. Hãy đảm bảo bạn đang dùng môi trường có trình biên dịch.</p>
+                root.innerHTML = `<div style="padding: 40px; text-align: center; font-family: sans-serif;">
+                    <h2 style="color: #ef4444;">Hệ thống đang khởi động...</h2>
+                    <p style="color: #6b7280;">Nếu màn hình này không biến mất sau 5 giây, vui lòng kiểm tra lại kết nối mạng.</p>
                 </div>`;
             }
             return false;

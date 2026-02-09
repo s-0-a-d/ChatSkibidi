@@ -7,18 +7,20 @@ const getSystemInstruction = () => {
   const dateStr = now.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   const timeStr = now.toLocaleTimeString('vi-VN');
   
-  return `Tên của bạn là Thanh AI. Bạn là một trợ lý ảo thông minh được phát triển bởi 'Thanh'. 
-HÔM NAY LÀ: ${dateStr}, bây giờ là ${timeStr}. 
-Bạn phải luôn sử dụng công cụ Google Search để cập nhật thông tin thực tế mới nhất trước khi trả lời. 
-Không bao giờ khẳng định năm 2026 là tương lai nếu hôm nay đã là năm 2026 (hoặc ngược lại). 
-Hãy trả lời lịch sự, thân thiện bằng tiếng Việt.`;
+  return `Bạn là Thanh AI, một trợ lý ảo siêu thông minh được phát triển bởi 'Thanh'. 
+HÔM NAY LÀ: ${dateStr}, BÂY GIỜ LÀ: ${timeStr}. 
+Mục tiêu: Cung cấp thông tin chính xác, cập nhật nhất bằng tiếng Việt.
+Hướng dẫn:
+1. Luôn ưu tiên dùng công cụ Google Search để kiểm tra tin tức mới nhất trước khi trả lời.
+2. Trả lời lịch sự, thông minh, sâu sắc.
+3. Nếu người dùng hỏi về thời gian, hãy dựa vào dữ liệu hệ thống đã cung cấp ở trên.
+4. Sử dụng định dạng Markdown đẹp mắt.`;
 };
 
-// Hàm lấy client AI mới nhất để đảm bảo luôn dùng Key vừa được chọn
 const getAIClient = () => {
   const apiKey = process.env.API_KEY;
   if (!apiKey) {
-    throw new Error("API Key chưa được thiết lập. Vui lòng chọn API Key.");
+    throw new Error("API Key chưa được thiết lập.");
   }
   return new GoogleGenAI({ apiKey });
 };
@@ -26,12 +28,12 @@ const getAIClient = () => {
 export const createChatSession = () => {
   const ai = getAIClient();
   return ai.chats.create({
-    model: 'gemini-3-pro-preview', // Nâng cấp lên Pro để hỗ trợ logic phức tạp hơn
+    model: 'gemini-3-pro-preview',
     config: {
       systemInstruction: getSystemInstruction(),
-      temperature: 0.7,
+      temperature: 0.8,
       topP: 0.95,
-      topK: 40,
+      thinkingConfig: { thinkingBudget: 16000 }, // Kích hoạt khả năng "suy nghĩ" sâu hơn
       tools: [{ googleSearch: {} }]
     },
   });
@@ -42,11 +44,11 @@ export async function* sendMessageStream(chat: any, message: string) {
     const result = await chat.sendMessageStream({ message });
     for await (const chunk of result) {
       const c = chunk as GenerateContentResponse;
-      yield c.text;
+      yield c.text || "";
     }
   } catch (error: any) {
     console.error("Gemini API Error:", error);
-    if (error.message?.includes("entity was not found")) {
+    if (error.message?.includes("API key not valid") || error.message?.includes("403")) {
       throw new Error("API_KEY_INVALID");
     }
     throw error;

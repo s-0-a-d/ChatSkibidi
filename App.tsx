@@ -6,9 +6,14 @@ import ChatMessage from './components/ChatMessage.tsx';
 import ChatInput from './components/ChatInput.tsx';
 
 const STORAGE_KEY = 'thanh_ai_chat_history';
+const KEY_STORAGE_KEY = 'gemini_api_key_manual';
 
 const App: React.FC = () => {
-  const [hasKey, setHasKey] = useState<boolean>(!!process.env.API_KEY);
+  const [apiKey, setApiKey] = useState<string>(() => {
+    return localStorage.getItem(KEY_STORAGE_KEY) || process.env.API_KEY || '';
+  });
+  
+  const [hasKey, setHasKey] = useState<boolean>(false);
   const [messages, setMessages] = useState<Message[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -26,7 +31,7 @@ const App: React.FC = () => {
       {
         id: 'welcome',
         role: Role.MODEL,
-        text: 'Xin chào! Tôi là **Thanh AI**. Bạn đã sẵn sàng để trò chuyện chưa?',
+        text: 'Xin chào! Tôi là **Thanh AI**. Hãy nhập API Key của bạn để chúng ta bắt đầu trò chuyện nhé!',
         timestamp: new Date(),
       }
     ];
@@ -37,31 +42,31 @@ const App: React.FC = () => {
   const chatSessionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Kiểm tra key khi mount
+  // Cập nhật process.env.API_KEY để gemini.ts có thể đọc được
   useEffect(() => {
-    const checkKey = async () => {
-      if (!process.env.API_KEY && window.aistudio) {
-        const selected = await window.aistudio.hasSelectedApiKey();
-        setHasKey(selected);
-      }
-    };
-    checkKey();
-  }, []);
-
-  useEffect(() => {
-    if (hasKey) {
+    if (apiKey) {
+      process.env.API_KEY = apiKey;
+      setHasKey(true);
       try {
         chatSessionRef.current = createChatSession();
       } catch (e) {
-        console.error("Init failed", e);
-        setHasKey(false);
+        console.error("Failed to init chat", e);
       }
+    } else {
+      setHasKey(false);
     }
-  }, [hasKey]);
+  }, [apiKey]);
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  }, [messages]);
+  const handleSaveKey = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const newKey = formData.get('apiKey') as string;
+    if (newKey.trim()) {
+      localStorage.setItem(KEY_STORAGE_KEY, newKey.trim());
+      setApiKey(newKey.trim());
+      setError(null);
+    }
+  };
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -71,20 +76,12 @@ const App: React.FC = () => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  const handleOpenKeyDialog = async () => {
-    if (window.aistudio) {
-      await window.aistudio.openSelectKey();
-      // Giả định chọn thành công theo tài liệu hướng dẫn
-      setHasKey(true);
-    }
-  };
-
   const handleSendMessage = async (text: string) => {
     if (!chatSessionRef.current) {
         try {
             chatSessionRef.current = createChatSession();
         } catch (e) {
-            setError("Vui lòng kết nối API Key trước.");
+            setError("Lỗi khởi tạo. Vui lòng kiểm tra lại API Key.");
             return;
         }
     }
@@ -125,12 +122,10 @@ const App: React.FC = () => {
     } catch (err: any) {
       console.error(err);
       if (err.message === "API_KEY_INVALID") {
-        setHasKey(false);
-        setError("API Key không hợp lệ hoặc đã hết hạn. Vui lòng chọn lại.");
+        setError("API Key không hợp lệ. Vui lòng kiểm tra lại.");
       } else {
-        setError('Lỗi kết nối. Hãy thử lại.');
+        setError('Lỗi kết nối. Vui lòng thử lại sau.');
       }
-      setIsTyping(false);
     } finally {
       setIsTyping(false);
     }
@@ -140,38 +135,60 @@ const App: React.FC = () => {
     setMessages([{
       id: 'welcome',
       role: Role.MODEL,
-      text: 'Đã làm mới cuộc hội thoại. Tôi là **Thanh AI**, bạn muốn hỏi gì tôi nào?',
+      text: 'Đã làm mới cuộc hội thoại. Tôi là **Thanh AI**, tôi có thể giúp gì cho bạn?',
       timestamp: new Date(),
     }]);
     localStorage.removeItem(STORAGE_KEY);
     if (hasKey) chatSessionRef.current = createChatSession();
   };
 
+  const logoutKey = () => {
+    localStorage.removeItem(KEY_STORAGE_KEY);
+    setApiKey('');
+    setHasKey(false);
+    chatSessionRef.current = null;
+  };
+
   if (!hasKey) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-gray-50 p-4">
-        <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 text-center animate-fade-in border border-gray-100">
-          <div className="bg-indigo-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <i className="fa-solid fa-key text-3xl text-indigo-600"></i>
+        <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 animate-fade-in border border-gray-100">
+          <div className="bg-indigo-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg rotate-3">
+            <i className="fa-solid fa-key text-2xl text-white"></i>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Chào mừng đến với Thanh AI</h2>
-          <p className="text-gray-500 mb-8 leading-relaxed">
-            Để bắt đầu, bạn cần kết nối với Google Gemini bằng API Key cá nhân của mình.
+          <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">Cấu hình Thanh AI</h2>
+          <p className="text-gray-500 mb-8 text-center text-sm">
+            Dán API Key của bạn từ Google AI Studio để bắt đầu. Key này chỉ được lưu trên trình duyệt của bạn.
           </p>
-          <button 
-            onClick={handleOpenKeyDialog}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-indigo-200 transition-all transform active:scale-95 mb-4"
-          >
-            Kết nối API Key
-          </button>
-          <a 
-            href="https://ai.google.dev/gemini-api/docs/billing" 
-            target="_blank" 
-            className="text-sm text-indigo-500 hover:underline"
-          >
-            Tìm hiểu về tài khoản và thanh toán API
-          </a>
-          {error && <p className="mt-4 text-red-500 text-sm font-medium">{error}</p>}
+          
+          <form onSubmit={handleSaveKey} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Gemini API Key</label>
+              <input 
+                name="apiKey"
+                type="password" 
+                placeholder="AIzaSy..."
+                required
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-mono text-sm"
+              />
+            </div>
+            <button 
+              type="submit"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-indigo-100 transition-all transform active:scale-95"
+            >
+              Lưu và Bắt đầu
+            </button>
+          </form>
+          
+          <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+            <a 
+              href="https://aistudio.google.com/app/apikey" 
+              target="_blank" 
+              className="text-xs text-indigo-500 hover:text-indigo-600 font-medium flex items-center justify-center gap-1"
+            >
+              Lấy API Key miễn phí tại đây <i className="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+            </a>
+          </div>
         </div>
       </div>
     );
@@ -182,20 +199,33 @@ const App: React.FC = () => {
       <header className="bg-white border-b border-gray-100 py-3 px-6 shadow-sm z-10">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="bg-indigo-600 p-2 rounded-xl shadow-md">
+            <div className="bg-indigo-600 p-2 rounded-xl shadow-md shadow-indigo-100">
               <i className="fa-solid fa-bolt text-white text-lg"></i>
             </div>
             <div>
               <h1 className="text-lg font-bold text-gray-900 leading-tight">Thanh AI</h1>
               <div className="flex items-center">
-                <span className="w-2 h-2 bg-emerald-500 rounded-full mr-2"></span>
-                <span className="text-xs text-gray-500 font-medium">Đang hoạt động</span>
+                <span className="w-2 h-2 bg-emerald-500 rounded-full mr-2 animate-pulse"></span>
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Trực tuyến</span>
               </div>
             </div>
           </div>
-          <button onClick={clearChat} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
-            <i className="fa-solid fa-trash-can"></i>
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={clearChat} 
+              className="p-2 w-10 h-10 rounded-xl text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all"
+              title="Xóa lịch sử"
+            >
+              <i className="fa-solid fa-trash-can"></i>
+            </button>
+            <button 
+              onClick={logoutKey} 
+              className="p-2 w-10 h-10 rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-all"
+              title="Đổi API Key"
+            >
+              <i className="fa-solid fa-gear"></i>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -206,16 +236,16 @@ const App: React.FC = () => {
           ))}
           {isTyping && (
             <div className="flex justify-start mb-6">
-               <div className="bg-white border border-gray-200 px-4 py-2 rounded-2xl rounded-tl-none flex items-center space-x-1">
-                 <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce"></div>
-                 <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
-                 <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+               <div className="bg-white border border-gray-200 px-4 py-2 rounded-2xl rounded-tl-none flex items-center space-x-1 shadow-sm">
+                 <div className="w-1 h-1 bg-indigo-400 rounded-full animate-bounce"></div>
+                 <div className="w-1 h-1 bg-indigo-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                 <div className="w-1 h-1 bg-indigo-400 rounded-full animate-bounce [animation-delay:0.4s]"></div>
                </div>
             </div>
           )}
           {error && (
-            <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-2 rounded-xl text-center text-sm mb-4">
-              {error}
+            <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-2 rounded-xl text-center text-sm mb-4 animate-fade-in">
+              <i className="fa-solid fa-circle-exclamation mr-2"></i> {error}
             </div>
           )}
           <div ref={messagesEndRef} />
