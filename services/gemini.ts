@@ -4,38 +4,43 @@ import { Role, Language } from "../types.ts";
 
 const getSystemInstruction = (lang: Language) => {
   const now = new Date();
-  const dateStr = now.toLocaleDateString(lang === 'vi' ? 'vi-VN' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const dateStr = now.toLocaleDateString(lang === 'vi' ? 'vi-VN' : 'en-US', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
   
-  if (lang === 'vi') {
-    return `Bạn là Mồn Lèo AI, một trợ lý ảo siêu thông minh được phát triển bởi 'Thanh'. 
-Hôm nay là: ${dateStr}.
-Hướng dẫn:
-1. Luôn dùng Google Search cho thông tin mới.
+  const baseInstruction = lang === 'vi' 
+    ? `Bạn là Mồn Lèo AI, một trợ lý ảo siêu thông minh được phát triển bởi 'Thanh'. Hôm nay là: ${dateStr}.`
+    : `You are Mồn Lèo AI, a super intelligent AI assistant developed by 'Thanh'. Today is: ${dateStr}.`;
+
+  const instructions = lang === 'vi'
+    ? `\nHướng dẫn:
+1. Luôn dùng Google Search cho thông tin mới hoặc sự kiện gần đây.
 2. Trả lời bằng tiếng Việt.
 3. Giữ phong cách chuyên nghiệp nhưng thân thiện.
-4. Tên của bạn luôn là "Mồn Lèo AI".`;
-  } else {
-    return `You are Mồn Lèo AI, a super intelligent AI assistant developed by 'Thanh'.
-Today is: ${dateStr}.
-Instructions:
-1. Always use Google Search for the latest information.
+4. Tên của bạn luôn là "Mồn Lèo AI", không được đổi.`
+    : `\nInstructions:
+1. Always use Google Search for the latest information or recent events.
 2. Respond in English.
 3. Keep a professional yet friendly tone.
-4. Your name is always "Mồn Lèo AI", do not translate it.`;
-  }
+4. Your name is always "Mồn Lèo AI", do not translate or change it.`;
+
+  return baseInstruction + instructions;
 };
 
 export const createChatSession = (apiKey: string, lang: Language) => {
   if (!apiKey) throw new Error("API Key is missing");
   
+  // Tạo instance mới mỗi lần để đảm bảo key luôn mới nhất
   const ai = new GoogleGenAI({ apiKey });
   return ai.chats.create({
-    model: 'gemini-3-pro-preview',
+    model: 'gemini-3-flash-preview', // Sử dụng Flash để tốc độ nhanh và ổn định hơn
     config: {
       systemInstruction: getSystemInstruction(lang),
-      temperature: 0.8,
+      temperature: 0.7,
       topP: 0.95,
-      thinkingConfig: { thinkingBudget: 16000 },
       tools: [{ googleSearch: {} }]
     },
   });
@@ -46,13 +51,21 @@ export async function* sendMessageStream(chat: any, message: string) {
     const result = await chat.sendMessageStream({ message });
     for await (const chunk of result) {
       const c = chunk as GenerateContentResponse;
-      yield c.text || "";
+      // Trích xuất text và kiểm tra groundingMetadata nếu cần
+      const text = c.text || "";
+      yield text;
     }
   } catch (error: any) {
-    console.error("Gemini API Error:", error);
-    if (error.message?.includes("API key not valid") || error.message?.includes("403")) {
+    console.error("Gemini API Detailed Error:", error);
+    
+    // Phân loại lỗi để App.tsx xử lý
+    const msg = error.message || "";
+    if (msg.includes("API key not valid") || msg.includes("403") || msg.includes("invalid_argument")) {
       throw new Error("API_KEY_INVALID");
     }
-    throw new Error(error.message || "Failed to send message");
+    if (msg.includes("model not found") || msg.includes("404")) {
+      throw new Error("MODEL_NOT_AVAILABLE");
+    }
+    throw new Error(msg || "Unknown connection error");
   }
 }

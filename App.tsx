@@ -41,18 +41,20 @@ const App: React.FC = () => {
   const chatSessionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Filter threads for current user
   const userThreads = threads.filter(t => t.userId === currentUser?.username);
   const currentThread = threads.find(t => t.id === currentThreadId);
   const messages = currentThread?.messages || [];
 
-  // Sync data to localStorage
   useEffect(() => { localStorage.setItem(USERS_KEY, JSON.stringify(users)); }, [users]);
   useEffect(() => { localStorage.setItem(THREADS_KEY, JSON.stringify(threads)); }, [threads]);
   useEffect(() => { localStorage.setItem(LANG_KEY, lang); }, [lang]);
   useEffect(() => {
-    if (currentUser) localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(currentUser));
-    else localStorage.removeItem(CURRENT_USER_KEY);
+    if (currentUser) {
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(currentUser));
+      process.env.API_KEY = currentUser.key;
+    } else {
+      localStorage.removeItem(CURRENT_USER_KEY);
+    }
   }, [currentUser]);
 
   const scrollToBottom = useCallback(() => {
@@ -64,7 +66,7 @@ const App: React.FC = () => {
   const handleAuth = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const key = (formData.get('apiKey') as string).trim();
+    const key = (formData.get('apiKey') as string || '').trim();
     const username = (formData.get('username') as string || '').trim();
 
     if (authMode === 'register') {
@@ -81,23 +83,24 @@ const App: React.FC = () => {
       if (user) {
         setCurrentUser(user);
       } else {
-        setError("Key not found. Please register first.");
+        setError("Key not recognized. Please register first with this key.");
       }
     }
     setError(null);
   };
 
-  const initChat = (force = false) => {
+  const initChat = useCallback((force = false) => {
     if (currentUser && (!chatSessionRef.current || force)) {
       try {
         chatSessionRef.current = createChatSession(currentUser.key, lang);
-      } catch (e) {
-        setError("Invalid Key");
+        setError(null);
+      } catch (e: any) {
+        setError(e.message || "Initialization failed");
       }
     }
-  };
+  }, [currentUser, lang]);
 
-  useEffect(() => { initChat(true); }, [currentUser, lang]);
+  useEffect(() => { initChat(true); }, [initChat]);
 
   const createNewThread = () => {
     if (!currentUser) return;
@@ -160,7 +163,18 @@ const App: React.FC = () => {
         } : t));
       }
     } catch (err: any) {
-      setError(err.message === "API_KEY_INVALID" ? "Invalid API Key" : "Connection Error. Please try again.");
+      console.error("Chat Error:", err);
+      let errorMsg = "An unexpected error occurred.";
+      if (err.message === "API_KEY_INVALID") errorMsg = "Invalid API Key. Please check your credentials.";
+      else if (err.message === "MODEL_NOT_AVAILABLE") errorMsg = "The model is currently unavailable in your region.";
+      else errorMsg = `Error: ${err.message}`;
+      
+      setError(errorMsg);
+      // Remove the empty AI message if failed
+      setThreads(prev => prev.map(t => t.id === activeId ? {
+        ...t,
+        messages: t.messages.filter(m => m.id !== aiMsgId)
+      } : t));
     } finally {
       setIsTyping(false);
     }
@@ -195,7 +209,7 @@ const App: React.FC = () => {
               {authMode === 'login' ? 'Continue' : 'Create Account'}
             </button>
           </form>
-          {error && <p className="mt-4 text-center text-xs text-red-500 font-bold">{error}</p>}
+          {error && <p className="mt-4 text-center text-xs text-red-500 font-bold bg-red-50 p-2 rounded-lg">{error}</p>}
         </div>
       </div>
     );
@@ -209,7 +223,10 @@ const App: React.FC = () => {
         onSelect={setCurrentThreadId} 
         onNewChat={createNewThread} 
         onDelete={(id, e) => { e.stopPropagation(); setThreads(threads.filter(t => t.id !== id)); if(id === currentThreadId) setCurrentThreadId(null); }}
-        onLogout={() => setCurrentUser(null)}
+        onLogout={() => {
+          setCurrentUser(null);
+          chatSessionRef.current = null;
+        }}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         userName={currentUser.username}
@@ -240,7 +257,7 @@ const App: React.FC = () => {
             <div className="max-w-4xl mx-auto p-4 md:p-10 pb-32">
               {messages.map((m) => <ChatMessage key={m.id} message={m} />)}
               {isTyping && <div className="flex justify-start mb-6"><div className="bg-white px-4 py-3 rounded-2xl border border-gray-100 shadow-sm flex gap-1"><div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></div><div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:0.2s]"></div><div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:0.4s]"></div></div></div>}
-              {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl text-xs font-bold text-center mb-6">{error}</div>}
+              {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl text-xs font-bold text-center mb-6 shadow-sm border border-red-100 animate-fade-in">{error}</div>}
               <div ref={messagesEndRef} />
             </div>
           )}
