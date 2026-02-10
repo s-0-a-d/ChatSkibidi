@@ -6,10 +6,13 @@ import ChatMessage from './components/ChatMessage.tsx';
 import ChatInput from './components/ChatInput.tsx';
 import Sidebar from './components/Sidebar.tsx';
 
-const USERS_KEY = 'mon_leo_users_v4';
-const CURRENT_USER_KEY = 'mon_leo_current_user_v4';
-const THREADS_KEY = 'mon_leo_threads_v4';
-const LANG_KEY = 'mon_leo_lang_v4';
+// API Key hệ thống do bạn cung cấp
+const SYSTEM_API_KEY = 'AIzaSyDrOJD6P_8TZ7CKMWpIx2cECGOeG4UheD8';
+
+const USERS_KEY = 'mon_leo_users_v5';
+const CURRENT_USER_KEY = 'mon_leo_current_user_v5';
+const THREADS_KEY = 'mon_leo_threads_v5';
+const LANG_KEY = 'mon_leo_lang_v5';
 
 const App: React.FC = () => {
   const [users, setUsers] = useState<User[]>(() => JSON.parse(localStorage.getItem(USERS_KEY) || '[]'));
@@ -18,7 +21,7 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : null;
   });
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem(LANG_KEY) as Language) || 'vi');
-  const [useSearch, setUseSearch] = useState(false); // Mặc định tắt search để tiết kiệm quota
+  const [useSearch, setUseSearch] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -70,14 +73,21 @@ const App: React.FC = () => {
     const username = (formData.get('username') as string || '').trim();
     const password = (formData.get('password') as string || '').trim();
 
+    if (!username || !password) { 
+      setError(lang === 'vi' ? "Vui lòng điền đầy đủ thông tin" : "Please fill in all fields"); 
+      return; 
+    }
+
     if (authMode === 'register') {
-      if (!username || !password) { setError("Vui lòng điền đầy đủ thông tin"); return; }
-      if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
-        setError(lang === 'vi' ? "Tên đăng nhập đã tồn tại" : "Username already exists");
+      // Kiểm tra trùng tên (không phân biệt hoa thường)
+      const isExisted = users.some(u => u.username.toLowerCase() === username.toLowerCase());
+      if (isExisted) {
+        setError(lang === 'vi' ? `Tên đăng nhập "${username}" đã tồn tại trên máy này.` : `Username "${username}" is already taken.`);
         return;
       }
-      const newUser: User = { username, password, key: '' };
-      setUsers([...users, newUser]);
+      
+      const newUser: User = { username, password, key: SYSTEM_API_KEY }; // Gán Key hệ thống mặc định
+      setUsers(prev => [...prev, newUser]);
       setCurrentUser(newUser);
     } else {
       const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
@@ -113,9 +123,8 @@ const App: React.FC = () => {
 
   const handleResetSystem = () => {
     const confirm = window.confirm(lang === 'vi' 
-      ? "CẢNH BÁO: Hành động này sẽ xóa TẤT CẢ tài khoản và tin nhắn trên hệ thống. Bạn có chắc chắn không?" 
-      : "WARNING: This will wipe ALL accounts and messages. Are you sure?");
-    
+      ? "CẢNH BÁO: Xóa sạch dữ liệu người dùng trên trình duyệt này?" 
+      : "Reset all browser-stored users?");
     if (confirm) {
       localStorage.clear();
       window.location.reload();
@@ -123,15 +132,14 @@ const App: React.FC = () => {
   };
 
   const initChat = useCallback((force = false) => {
-    if (currentUser && currentUser.key && (!chatSessionRef.current || force)) {
+    const activeKey = currentUser?.key || SYSTEM_API_KEY;
+    if (currentUser && (!chatSessionRef.current || force)) {
       try {
-        chatSessionRef.current = createChatSession(currentUser.key, lang, useSearch);
+        chatSessionRef.current = createChatSession(activeKey, lang, useSearch);
         setError(null);
       } catch (e: any) {
-        setError(e.message || "Initialization failed");
+        setError(e.message || "Init failed");
       }
-    } else if (currentUser && !currentUser.key) {
-      chatSessionRef.current = null;
     }
   }, [currentUser, lang, useSearch]);
 
@@ -141,13 +149,13 @@ const App: React.FC = () => {
     if (!currentUser) return;
     const newId = Date.now().toString();
     const welcomeText = lang === 'vi' 
-      ? `Chào **${currentUser.username}**! Mồn Lèo AI đã sẵn sàng.` 
-      : `Hello **${currentUser.username}**! Mồn Lèo AI is ready. How can I help you today?`;
+      ? `Chào **${currentUser.username}**! Mồn Lèo AI đã sẵn sàng với API Key của bạn.` 
+      : `Hello **${currentUser.username}**! Mồn Lèo AI is ready.`;
       
     const newThread: ChatThread = {
       id: newId,
       userId: currentUser.username,
-      title: lang === 'vi' ? 'Cuộc trò chuyện mới' : 'New Chat',
+      title: lang === 'vi' ? 'Hội thoại mới' : 'New Chat',
       messages: [{ id: 'w-' + newId, role: Role.MODEL, text: welcomeText, timestamp: new Date() }],
       lastUpdated: new Date(),
     };
@@ -160,35 +168,18 @@ const App: React.FC = () => {
   const handleSendMessage = async (text: string) => {
     if (!currentUser) return;
     
-    if (!currentUser.key) {
-      setError(lang === 'vi' 
-        ? "Vui lòng cài đặt API Key trong phần cài đặt (góc trái dưới) để bắt đầu trò chuyện." 
-        : "Please set your API Key in Settings (bottom left) to start chatting.");
-      setIsSettingsOpen(true);
-      return;
-    }
-
     let activeId = currentThreadId;
-    
     if (!activeId) {
       const newId = Date.now().toString();
-      const newThread: ChatThread = {
-        id: newId,
-        userId: currentUser.username,
-        title: text.slice(0, 30),
-        messages: [],
-        lastUpdated: new Date(),
-      };
+      const newThread: ChatThread = { id: newId, userId: currentUser.username, title: text.slice(0, 30), messages: [], lastUpdated: new Date() };
       setThreads(prev => [newThread, ...prev]);
       activeId = newId;
       setCurrentThreadId(newId);
     }
 
     if (!chatSessionRef.current) initChat();
-
     const userMsg: Message = { id: Date.now().toString(), role: Role.USER, text, timestamp: new Date() };
     setThreads(prev => prev.map(t => t.id === activeId ? { ...t, messages: [...t.messages, userMsg], lastUpdated: new Date() } : t));
-
     setIsTyping(true);
     setError(null);
 
@@ -207,17 +198,9 @@ const App: React.FC = () => {
         } : t));
       }
     } catch (err: any) {
-      console.error("Chat Error:", err);
-      let errorMsg = "";
-      if (err.message === "QUOTA_EXHAUSTED") {
-        errorMsg = lang === 'vi' 
-          ? "Bạn đã hết hạn mức API miễn phí. Hãy thử tắt 'Tìm kiếm Google' hoặc đợi 1 phút." 
-          : "API quota exceeded. Try disabling 'Google Search' or wait a minute.";
-      } else if (err.message === "API_KEY_INVALID") {
-        errorMsg = lang === 'vi' ? "API Key không hợp lệ hoặc đã bị vô hiệu hóa." : "Invalid or disabled API Key.";
-      } else {
-        errorMsg = (lang === 'vi' ? "Lỗi: " : "Error: ") + err.message;
-      }
+      let errorMsg = err.message === "QUOTA_EXHAUSTED" 
+        ? (lang === 'vi' ? "Hạn mức API hệ thống tạm hết. Hãy tắt 'Tìm kiếm' hoặc đợi 1 phút." : "Quota exceeded. Disable search or wait.")
+        : (lang === 'vi' ? "Lỗi kết nối AI: " : "AI Error: ") + err.message;
       setError(errorMsg);
       setThreads(prev => prev.map(t => t.id === activeId ? { ...t, messages: t.messages.filter(m => m.id !== aiMsgId) } : t));
     } finally {
@@ -227,32 +210,37 @@ const App: React.FC = () => {
 
   if (!currentUser) {
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-[#fafafa] p-4">
-        <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 animate-fade-in border border-gray-100">
-          <div className="bg-indigo-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-indigo-100 rotate-6">
-            <i className="fa-solid fa-cat text-2xl text-white"></i>
+      <div className="h-screen w-full flex items-center justify-center bg-[#f0f2f5] p-4">
+        <div className="max-w-md w-full bg-white rounded-[2rem] shadow-2xl p-10 animate-fade-in border border-gray-100">
+          <div className="bg-indigo-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-indigo-200 rotate-3">
+            <i className="fa-solid fa-cat text-3xl text-white"></i>
           </div>
-          <h2 className="text-2xl font-black text-gray-900 mb-6 text-center tracking-tight">Mồn Lèo AI</h2>
+          <h2 className="text-3xl font-black text-gray-900 mb-2 text-center tracking-tight">Mồn Lèo AI</h2>
+          <p className="text-center text-gray-500 text-sm mb-8">{lang === 'vi' ? 'Trợ lý AI của Thanh' : 'AI Assistant by Thanh'}</p>
           
-          <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
-            <button onClick={() => { setAuthMode('login'); setError(null); }} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${authMode === 'login' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}>LOGIN</button>
-            <button onClick={() => { setAuthMode('register'); setError(null); }} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${authMode === 'register' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}>REGISTER</button>
+          <div className="flex bg-gray-100 p-1.5 rounded-2xl mb-8">
+            <button onClick={() => { setAuthMode('login'); setError(null); }} className={`flex-1 py-3 rounded-xl text-xs font-black tracking-widest transition-all ${authMode === 'login' ? 'bg-white shadow-md text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}>ĐĂNG NHẬP</button>
+            <button onClick={() => { setAuthMode('register'); setError(null); }} className={`flex-1 py-3 rounded-xl text-xs font-black tracking-widest transition-all ${authMode === 'register' ? 'bg-white shadow-md text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}>ĐĂNG KÝ</button>
           </div>
 
-          <form onSubmit={handleAuth} className="space-y-4">
+          <form onSubmit={handleAuth} className="space-y-5">
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Username</label>
-              <input name="username" type="text" placeholder="Your username" required className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm" />
+              <input name="username" type="text" placeholder="Tên đăng nhập" required className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-6 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none text-sm font-medium transition-all" />
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Password</label>
-              <input name="password" type="password" placeholder="••••••••" required className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm" />
+              <input name="password" type="password" placeholder="Mật khẩu" required className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-6 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none text-sm font-medium transition-all" />
             </div>
-            <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-100 transition-all active:scale-95">
-              {authMode === 'login' ? 'Continue' : 'Create Account'}
+            <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-2xl shadow-xl shadow-indigo-100 transition-all active:scale-95 text-sm tracking-widest">
+              {authMode === 'login' ? 'BẮT ĐẦU' : 'TẠO TÀI KHOẢN'}
             </button>
           </form>
-          {error && <p className="mt-4 text-center text-xs text-red-500 font-bold bg-red-50 p-2 rounded-lg">{error}</p>}
+          {error && <div className="mt-6 text-center text-[11px] text-red-500 font-bold bg-red-50 p-3 rounded-xl animate-shake border border-red-100">{error}</div>}
+          
+          <div className="mt-8 pt-6 border-t border-gray-50 text-center">
+             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-relaxed">
+               Dữ liệu tài khoản được lưu cục bộ trên trình duyệt này.<br/>Đừng xóa cache nếu muốn giữ tin nhắn.
+             </p>
+          </div>
         </div>
       </div>
     );
@@ -280,12 +268,9 @@ const App: React.FC = () => {
           <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-xl"><i className="fa-solid fa-bars-staggered"></i></button>
           <div className="flex items-center gap-4">
              <h2 className="text-sm font-bold text-gray-900 truncate max-w-[150px]">{currentThread?.title || "Mồn Lèo AI"}</h2>
-             {/* Toggle Search UI */}
              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full cursor-pointer hover:bg-gray-200 transition-colors" onClick={() => setUseSearch(!useSearch)}>
                 <i className={`fa-solid fa-globe text-[10px] ${useSearch ? 'text-blue-500' : 'text-gray-400'}`}></i>
-                <span className="text-[10px] font-bold text-gray-600 uppercase tracking-tighter">
-                  {lang === 'vi' ? (useSearch ? 'Đang tìm kiếm' : 'Tìm kiếm tắt') : (useSearch ? 'Search On' : 'Search Off')}
-                </span>
+                <span className="text-[10px] font-bold text-gray-600 uppercase tracking-tighter">{useSearch ? 'Tìm kiếm Bật' : 'Tìm kiếm Tắt'}</span>
                 <div className={`w-6 h-3.5 rounded-full p-0.5 transition-colors ${useSearch ? 'bg-blue-500' : 'bg-gray-300'}`}>
                   <div className={`w-2.5 h-2.5 bg-white rounded-full transition-transform ${useSearch ? 'translate-x-2.5' : 'translate-x-0'}`}></div>
                 </div>
@@ -304,23 +289,9 @@ const App: React.FC = () => {
           {!currentThreadId ? (
             <div className="h-full flex flex-col items-center justify-center p-8 text-center max-w-sm mx-auto">
               <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center text-2xl mb-6"><i className="fa-solid fa-cat"></i></div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">{lang === 'vi' ? 'Bắt đầu trò chuyện' : 'Start a conversation'}</h3>
-              <p className="text-xs text-gray-500 mb-6">{lang === 'vi' ? 'Mồn Lèo AI đã sẵn sàng giúp đỡ bạn.' : 'Mồn Lèo AI is ready to help you.'}</p>
-              
-              {!currentUser.key && (
-                <div className="mb-6 p-4 bg-amber-50 border border-amber-100 rounded-2xl text-amber-700 text-[11px] font-medium">
-                  <i className="fa-solid fa-circle-exclamation mr-2"></i>
-                  {lang === 'vi' ? 'Bạn chưa cài đặt API Key để AI hoạt động.' : 'You haven\'t set an API Key for AI to function.'}
-                </div>
-              )}
-
-              <div className="flex flex-col gap-2 w-full">
-                <button onClick={createNewThread} className="bg-indigo-600 text-white px-6 py-3 rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all">{lang === 'vi' ? 'Chat mới' : 'New Chat'}</button>
-                <button onClick={() => setUseSearch(!useSearch)} className={`px-6 py-2 rounded-xl text-[10px] font-bold transition-all border ${useSearch ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-gray-200 text-gray-500'}`}>
-                  <i className="fa-solid fa-globe mr-2"></i>
-                  {lang === 'vi' ? (useSearch ? 'Tìm kiếm Google: Bật' : 'Tìm kiếm Google: Tắt') : (useSearch ? 'Google Search: On' : 'Google Search: Off')}
-                </button>
-              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Chào {currentUser.username}!</h3>
+              <p className="text-xs text-gray-500 mb-6">Tôi đang sử dụng API Key mặc định của hệ thống để hỗ trợ bạn.</p>
+              <button onClick={createNewThread} className="bg-indigo-600 text-white px-8 py-4 rounded-2xl text-xs font-black tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 uppercase">Chat mới ngay</button>
             </div>
           ) : (
             <div className="max-w-4xl mx-auto p-4 md:p-10 pb-32">
@@ -337,36 +308,26 @@ const App: React.FC = () => {
 
       {isSettingsOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl animate-fade-in">
-            <h3 className="text-xl font-black text-gray-900 mb-6">{lang === 'vi' ? 'Cài đặt' : 'Settings'}</h3>
+          <div className="bg-white w-full max-w-sm rounded-[2rem] p-8 shadow-2xl animate-fade-in">
+            <h3 className="text-xl font-black text-gray-900 mb-2">Quản lý API Key</h3>
+            <p className="text-[10px] text-gray-400 font-bold mb-6 uppercase tracking-widest">Nếu key hệ thống hết hạn, bạn có thể tự thay.</p>
             
             <form onSubmit={handleUpdateKey} className="space-y-4 pb-6 border-b border-gray-100 mb-6">
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">API Key</label>
-                <input name="newKey" type="text" defaultValue={currentUser.key} placeholder="AIzaSy..." required className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none font-mono text-xs" />
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">API Key mới</label>
+                <input name="newKey" type="text" defaultValue={currentUser.key} placeholder="Dán key của bạn..." required className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none font-mono text-xs" />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Current Password</label>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Xác nhận mật khẩu</label>
                 <input name="confirmPassword" type="password" placeholder="••••••••" required className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm" />
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setIsSettingsOpen(false)} className="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50">{lang === 'vi' ? 'Hủy' : 'Cancel'}</button>
-                <button type="submit" className="flex-1 bg-indigo-600 text-white px-4 py-3 rounded-xl text-xs font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all">
-                  {lang === 'vi' ? 'Cập nhật' : 'Update'}
-                </button>
+                <button type="button" onClick={() => setIsSettingsOpen(false)} className="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50">HỦY</button>
+                <button type="submit" className="flex-1 bg-indigo-600 text-white px-4 py-3 rounded-xl text-xs font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all uppercase">LƯU KEY</button>
               </div>
             </form>
 
-            <div className="pt-2">
-              <button 
-                onClick={handleResetSystem}
-                className="w-full bg-red-50 text-red-600 px-4 py-3 rounded-xl text-[10px] font-black hover:bg-red-100 transition-all border border-red-100 uppercase tracking-widest"
-              >
-                <i className="fa-solid fa-triangle-exclamation mr-2"></i>
-                {lang === 'vi' ? 'Reset toàn bộ hệ thống' : 'Reset All System Data'}
-              </button>
-            </div>
-            
+            <button onClick={handleResetSystem} className="w-full bg-red-50 text-red-600 px-4 py-3 rounded-xl text-[10px] font-black hover:bg-red-100 transition-all border border-red-100 uppercase tracking-widest"><i className="fa-solid fa-trash mr-2"></i>Reset toàn bộ máy</button>
             {error && <p className="mt-4 text-center text-[10px] text-red-500 font-bold">{error}</p>}
           </div>
         </div>
