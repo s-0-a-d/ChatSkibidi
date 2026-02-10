@@ -11,6 +11,13 @@ export interface Message {
   timestamp: Date;
 }
 
+export interface ChatThread {
+  id: string;
+  title: string;
+  messages: Message[];
+  lastUpdated: Date;
+}
+
 export interface ChatState {
   messages: Message[];
   isTyping: boolean;

@@ -25,23 +25,24 @@ const PreComponent = ({ children, ...props }: any) => {
 
   return (
     <div className="relative group">
-      <button
-        onClick={handleCopy}
-        className="absolute right-2 top-2 z-20 p-1.5 rounded-md bg-gray-700/50 hover:bg-gray-600 text-white/70 hover:text-white transition-all opacity-0 group-hover:opacity-100 flex items-center space-x-1 text-xs backdrop-blur-sm border border-white/10"
-        title="Sao chép"
-      >
-        {copied ? (
-          <>
-            <i className="fa-solid fa-check text-emerald-400"></i>
-            <span>Đã chép</span>
-          </>
-        ) : (
-          <>
-            <i className="fa-solid fa-copy"></i>
-            <span>Sao chép</span>
-          </>
-        )}
-      </button>
+      <div className="absolute right-3 top-3 z-20 flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={handleCopy}
+          className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-all flex items-center space-x-1.5 text-[10px] font-bold backdrop-blur-md border border-white/10"
+        >
+          {copied ? (
+            <>
+              <i className="fa-solid fa-check text-emerald-400"></i>
+              <span>COPIED</span>
+            </>
+          ) : (
+            <>
+              <i className="fa-solid fa-copy"></i>
+              <span>COPY</span>
+            </>
+          )}
+        </button>
+      </div>
       <pre ref={preRef} {...props}>
         {children}
       </pre>
@@ -57,19 +58,19 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   };
 
   return (
-    <div className={`flex w-full mb-6 animate-fade-in ${isUser ? 'justify-end' : 'justify-start'}`}>
-      <div className={`flex max-w-[85%] md:max-w-[70%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-        <div className={`flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-sm ${isUser ? 'ml-3 bg-indigo-600' : 'mr-3 bg-emerald-500'}`}>
-          {isUser ? <i className="fa-solid fa-user"></i> : <i className="fa-solid fa-robot"></i>}
+    <div className={`flex w-full mb-8 animate-fade-in ${isUser ? 'justify-end' : 'justify-start'}`}>
+      <div className={`flex max-w-[92%] md:max-w-[80%] ${isUser ? 'flex-row-reverse' : 'flex-row'} items-start`}>
+        <div className={`flex-shrink-0 h-8 w-8 rounded-lg flex items-center justify-center text-white text-[10px] font-black shadow-sm ${isUser ? 'ml-3 bg-indigo-600' : 'mr-3 bg-gray-900 ring-4 ring-gray-50'}`}>
+          {isUser ? <i className="fa-solid fa-user"></i> : <i className="fa-solid fa-cat"></i>}
         </div>
         
-        <div className="flex flex-col group/msg">
-          <div className={`px-4 py-3 rounded-2xl shadow-sm text-sm md:text-base leading-relaxed relative ${
+        <div className={`flex flex-col group/msg min-w-0 ${isUser ? 'items-end' : 'items-start'}`}>
+          <div className={`px-4 py-3 rounded-2xl shadow-sm relative ${
             isUser 
-              ? 'message-bubble-user text-white rounded-tr-none' 
-              : 'message-bubble-ai text-gray-800 rounded-tl-none'
+              ? 'message-bubble-user rounded-tr-none' 
+              : 'message-bubble-ai rounded-tl-none border border-gray-100 bg-white'
           }`}>
-            <div className={`prose ${isUser ? 'prose-invert' : ''}`}>
+            <div className={`prose`}>
               <ReactMarkdown
                 components={{
                   pre: PreComponent
@@ -79,17 +80,19 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
               </ReactMarkdown>
             </div>
             
-            {!isUser && (
-              <button 
-                onClick={handleCopyAll}
-                className="absolute -right-10 top-0 p-2 text-gray-300 hover:text-indigo-500 transition-colors opacity-0 group-hover/msg:opacity-100 hidden md:block"
-                title="Sao chép toàn bộ tin nhắn"
-              >
-                <i className="fa-solid fa-copy text-sm"></i>
-              </button>
+            {!isUser && message.text && (
+              <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-50 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                <button 
+                  onClick={handleCopyAll}
+                  className="text-gray-400 hover:text-indigo-600 transition-colors flex items-center gap-1.5 text-[10px] font-bold"
+                  title="Sao chép"
+                >
+                  <i className="fa-solid fa-copy"></i> SAO CHÉP
+                </button>
+              </div>
             )}
           </div>
-          <span className={`text-[10px] mt-1 text-gray-400 font-medium ${isUser ? 'text-right' : 'text-left'}`}>
+          <span className={`text-[9px] mt-1.5 text-gray-400 font-bold uppercase tracking-wider px-1`}>
             {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>
         </div>
