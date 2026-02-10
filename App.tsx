@@ -10,7 +10,6 @@ const SYSTEM_API_KEY = 'AIzaSyDrOJD6P_8TZ7CKMWpIx2cECGOeG4UheD8';
 const STORAGE_THREADS = 'mon_leo_threads_v6';
 const STORAGE_SETTINGS = 'mon_leo_settings_v6';
 
-// Từ điển đa ngôn ngữ cho giao diện
 const translations: Record<Language, any> = {
   en: {
     title: "Mồn Lèo AI",
@@ -28,12 +27,13 @@ const translations: Record<Language, any> = {
     save: "Save Changes",
     welcome: "Hello! Mồn Lèo AI is ready to help you.",
     typing: "Mồn Lèo AI is thinking...",
-    errorQuota: "API quota exceeded. Please wait a minute or disable search.",
+    errorQuota: "API quota exceeded. Search consumes a lot of quota on free plans. Please wait 1 minute or disable search.",
     errorKey: "Invalid API Key. Please check your settings.",
     confirmReset: "Are you sure? This will delete all your chats forever.",
     placeholder: "Ask Mồn Lèo AI anything...",
     noChats: "No conversations yet.",
-    footerNote: "Gemini AI may provide inaccurate info."
+    footerNote: "Gemini AI may provide inaccurate info.",
+    searchWarning: "Notice: Search quota is very limited on free API keys."
   },
   vi: {
     title: "Mồn Lèo AI",
@@ -51,12 +51,13 @@ const translations: Record<Language, any> = {
     save: "Lưu thay đổi",
     welcome: "Chào bạn! Mồn Lèo AI đã sẵn sàng hỗ trợ.",
     typing: "Mồn Lèo AI đang suy nghĩ...",
-    errorQuota: "Hết hạn mức API. Vui lòng đợi 1 phút hoặc tắt tìm kiếm.",
+    errorQuota: "Hết hạn mức API. Tính năng Tìm kiếm tốn rất nhiều hạn mức của gói miễn phí. Vui lòng đợi 1 phút hoặc tắt Tìm kiếm.",
     errorKey: "Mã API không hợp lệ. Vui lòng kiểm tra cài đặt.",
     confirmReset: "Bạn có chắc chắn? Toàn bộ tin nhắn sẽ bị xóa vĩnh viễn.",
     placeholder: "Hỏi Mồn Lèo AI bất cứ điều gì...",
     noChats: "Chưa có cuộc trò chuyện nào.",
-    footerNote: "Gemini AI có thể đưa ra thông tin không chính xác."
+    footerNote: "Gemini AI có thể đưa ra thông tin không chính xác.",
+    searchWarning: "Lưu ý: Hạn mức tìm kiếm của API miễn phí rất thấp."
   },
   fr: {
     title: "Mồn Lèo AI",
@@ -74,12 +75,13 @@ const translations: Record<Language, any> = {
     save: "Sauvegarder",
     welcome: "Bonjour ! Mồn Lèo AI est prêt à vous aider.",
     typing: "Mồn Lèo AI réfléchit...",
-    errorQuota: "Quota API épuisé. Veuillez patienter ou désactiver la recherche.",
+    errorQuota: "Quota API épuisé. La recherche consomme beaucoup de quota. Attendez 1 min ou désactivez-la.",
     errorKey: "Clé API invalide. Veuillez vérifier vos paramètres.",
     confirmReset: "Êtes-vous sûr ? Cela supprimera tous vos messages.",
     placeholder: "Demandez n'importe quoi à Mồn Lèo AI...",
     noChats: "Aucune conversation.",
-    footerNote: "Gemini AI peut fournir des infos inexactes."
+    footerNote: "Gemini AI peut fournir des infos inexactes.",
+    searchWarning: "Note: Le quota de recherche est limité sur les clés gratuites."
   },
   ja: {
     title: "Mồn Lèo AI",
@@ -97,12 +99,13 @@ const translations: Record<Language, any> = {
     save: "保存",
     welcome: "こんにちは！ Mồn Lèo AI がお手伝いします。",
     typing: "Mồn Lèo AI が考えています...",
-    errorQuota: "API クォータを超えました。しばらく待つか検索を無効にしてください。",
+    errorQuota: "API クォータを超えました。検索はクォータを多く消費します。1分待つか無効にしてください。",
     errorKey: "無効な API キーです。設定を確認してください。",
     confirmReset: "本当によろしいですか？ すべてのチャットが削除されます。",
     placeholder: "Mồn Lèo AI に何でも聞いてください...",
     noChats: "会話はありません。",
-    footerNote: "Gemini AI は不正確な情報を提供する場合があります。"
+    footerNote: "Gemini AI は不正確な情報を提供する場合があります。",
+    searchWarning: "注意：無料枠の検索クォータは非常に限られています。"
   },
   ko: {
     title: "Mồn Lèo AI",
@@ -120,12 +123,13 @@ const translations: Record<Language, any> = {
     save: "저장",
     welcome: "안녕하세요! Mồn Lèo AI가 도와드릴 준비가 되었습니다.",
     typing: "Mồn Lèo AI가 생각 중입니다...",
-    errorQuota: "API 할당량이 초과되었습니다. 잠시 기다리거나 검색을 끄십시오.",
+    errorQuota: "API 할당량이 초과되었습니다. 검색은 많은 할당량을 소모합니다. 1분 대기하거나 끄십시오.",
     errorKey: "유효하지 않은 API 키입니다. 설정을 확인하세요.",
     confirmReset: "정말인가요? 모든 대화가 영구적으로 삭제됩니다.",
     placeholder: "Mồn Lèo AI에게 무엇이든 물어보세요...",
     noChats: "대화가 없습니다.",
-    footerNote: "Gemini AI는 부정확한 정보를 제공할 수 있습니다."
+    footerNote: "Gemini AI는 부정확한 정보를 제공할 수 있습니다.",
+    searchWarning: "참고: 무료 API의 검색 할당량은 매우 낮습니다."
   },
   zh: {
     title: "Mồn Lèo AI",
@@ -143,12 +147,13 @@ const translations: Record<Language, any> = {
     save: "保存",
     welcome: "你好！Mồn Lèo AI 已准备好为您提供帮助。",
     typing: "Mồn Lèo AI 正在思考...",
-    errorQuota: "API 配额已用尽。请稍候或禁用搜索。",
+    errorQuota: "API 配额已用尽。搜索功能消耗大量配额。请等1分钟或禁用搜索。",
     errorKey: "API 密钥无效。请检查您的设置。",
     confirmReset: "您确定吗？这将永久删除所有对话。",
     placeholder: "问 Mồn Lèo AI 任何问题...",
     noChats: "暂无对话。",
-    footerNote: "Gemini AI 可能会提供不准确的信息。"
+    footerNote: "Gemini AI 可能会提供不准确的信息。",
+    searchWarning: "注意：免费 API 的搜索配额非常有限。"
   }
 };
 
@@ -252,7 +257,11 @@ const App: React.FC = () => {
       }
     } catch (err: any) {
       let msg = ui.errorKey;
-      if (err.message === "QUOTA_EXHAUSTED") msg = ui.errorQuota;
+      if (err.message === "QUOTA_EXHAUSTED") {
+        msg = ui.errorQuota;
+      } else {
+        msg = (settings.language === 'en' ? "Error: " : "Lỗi: ") + err.message;
+      }
       setError(msg);
       setThreads(prev => prev.map(t => t.id === activeId ? { ...t, messages: t.messages.filter(m => m.id !== aiMsgId) } : t));
     } finally {
@@ -290,9 +299,9 @@ const App: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-4">
-             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full cursor-pointer hover:bg-gray-200 transition-colors" onClick={() => setSettings({...settings, useSearch: !settings.useSearch})}>
+             <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full cursor-pointer hover:bg-gray-200 transition-colors" onClick={() => setSettings({...settings, useSearch: !settings.useSearch})}>
                 <i className={`fa-solid fa-globe text-[10px] ${settings.useSearch ? 'text-blue-500' : 'text-gray-400'}`}></i>
-                <span className="text-[10px] font-bold text-gray-600 uppercase tracking-tighter">{settings.useSearch ? ui.searchOn : ui.searchOff}</span>
+                <span className="hidden sm:inline text-[10px] font-bold text-gray-600 uppercase tracking-tighter">{settings.useSearch ? ui.searchOn : ui.searchOff}</span>
                 <div className={`w-6 h-3.5 rounded-full p-0.5 transition-colors ${settings.useSearch ? 'bg-blue-500' : 'bg-gray-300'}`}>
                   <div className={`w-2.5 h-2.5 bg-white rounded-full transition-transform ${settings.useSearch ? 'translate-x-2.5' : 'translate-x-0'}`}></div>
                 </div>
@@ -307,13 +316,31 @@ const App: React.FC = () => {
               <div className="w-20 h-20 bg-indigo-600 text-white rounded-[2rem] flex items-center justify-center text-3xl mb-8 shadow-2xl shadow-indigo-100 rotate-3"><i className="fa-solid fa-cat"></i></div>
               <h3 className="text-2xl font-black text-gray-900 mb-2">{ui.title}</h3>
               <p className="text-sm text-gray-500 mb-8">{ui.subtitle}</p>
+              
+              {settings.useSearch && (
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-2xl text-[11px] font-bold text-blue-600 animate-pulse">
+                  <i className="fa-solid fa-circle-info mr-2"></i>
+                  {ui.searchWarning}
+                </div>
+              )}
+
               <button onClick={createNewThread} className="bg-indigo-600 text-white px-8 py-4 rounded-2xl text-xs font-black tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 uppercase">{ui.newChat}</button>
             </div>
           ) : (
             <div className="max-w-4xl mx-auto p-4 md:p-10 pb-32">
               {messages.map((m) => <ChatMessage key={m.id} message={m} />)}
               {isTyping && <div className="flex justify-start mb-6"><div className="bg-white px-4 py-3 rounded-2xl border border-gray-100 shadow-sm flex gap-2 items-center text-[10px] font-bold text-indigo-400 animate-pulse"><i className="fa-solid fa-cat animate-bounce"></i> {ui.typing}</div></div>}
-              {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl text-xs font-bold text-center mb-6 shadow-sm border border-red-100 animate-fade-in">{error}</div>}
+              {error && (
+                <div className="bg-red-50 text-red-600 p-6 rounded-2xl text-xs font-bold text-center mb-6 shadow-sm border border-red-100 animate-fade-in flex flex-col gap-3">
+                  <i className="fa-solid fa-triangle-exclamation text-xl"></i>
+                  {error}
+                  {settings.useSearch && (
+                    <button onClick={() => setSettings({...settings, useSearch: false})} className="mt-2 text-red-500 underline uppercase tracking-tighter text-[10px]">
+                      {settings.language === 'vi' ? 'Tắt Tìm kiếm ngay' : 'Disable Search Now'}
+                    </button>
+                  )}
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
           )}
@@ -346,7 +373,7 @@ const App: React.FC = () => {
                 <select 
                   value={settings.language} 
                   onChange={(e) => setSettings({...settings, language: e.target.value as Language})}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-3 px-5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none text-xs font-bold transition-all appearance-none"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-3 px-5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none text-xs font-bold transition-all appearance-none cursor-pointer"
                 >
                   <option value="en">ENGLISH</option>
                   <option value="vi">TIẾNG VIỆT</option>
@@ -357,14 +384,17 @@ const App: React.FC = () => {
                 </select>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                <span className="text-[11px] font-black text-gray-600 uppercase tracking-tight">{ui.search}</span>
-                <div 
-                  className={`w-10 h-6 rounded-full p-1 transition-colors cursor-pointer ${settings.useSearch ? 'bg-blue-500' : 'bg-gray-300'}`}
-                  onClick={() => setSettings({...settings, useSearch: !settings.useSearch})}
-                >
-                  <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${settings.useSearch ? 'translate-x-4' : 'translate-x-0'}`}></div>
+              <div className="flex flex-col gap-2 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black text-gray-600 uppercase tracking-tight">{ui.search}</span>
+                  <div 
+                    className={`w-10 h-6 rounded-full p-1 transition-colors cursor-pointer ${settings.useSearch ? 'bg-blue-500' : 'bg-gray-300'}`}
+                    onClick={() => setSettings({...settings, useSearch: !settings.useSearch})}
+                  >
+                    <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${settings.useSearch ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                  </div>
                 </div>
+                {settings.useSearch && <p className="text-[9px] text-blue-500 font-bold uppercase">{ui.searchWarning}</p>}
               </div>
 
               <div className="pt-4 flex flex-col gap-3">

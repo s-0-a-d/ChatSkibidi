@@ -1,6 +1,6 @@
 {
-  "name": "Thanh AI Chatbot",
-  "description": "Một trợ lý AI tinh tế được tối ưu hóa cho tiếng Việt, do Thanh phát triển dựa trên nền tảng Google Gemini.",
+  "name": "Mồn Lèo AI",
+  "description": "A sophisticated multi-language AI assistant powered by Gemini, featuring Google Search and local data persistence.",
   "requestFramePermissions": [
     "microphone"
   ]
