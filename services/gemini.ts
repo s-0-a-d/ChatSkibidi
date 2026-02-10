@@ -33,14 +33,14 @@ const getSystemInstruction = (lang: Language) => {
 export const createChatSession = (apiKey: string, lang: Language) => {
   if (!apiKey) throw new Error("API Key is missing");
   
-  // Tạo instance mới mỗi lần để đảm bảo key luôn mới nhất
   const ai = new GoogleGenAI({ apiKey });
   return ai.chats.create({
-    model: 'gemini-3-flash-preview', // Sử dụng Flash để tốc độ nhanh và ổn định hơn
+    model: 'gemini-3-flash-preview', 
     config: {
       systemInstruction: getSystemInstruction(lang),
       temperature: 0.7,
       topP: 0.95,
+      // Tắt Search tool nếu muốn tiết kiệm quota hơn, nhưng ở đây vẫn giữ vì user cần thông tin mới
       tools: [{ googleSearch: {} }]
     },
   });
@@ -51,21 +51,27 @@ export async function* sendMessageStream(chat: any, message: string) {
     const result = await chat.sendMessageStream({ message });
     for await (const chunk of result) {
       const c = chunk as GenerateContentResponse;
-      // Trích xuất text và kiểm tra groundingMetadata nếu cần
       const text = c.text || "";
       yield text;
     }
   } catch (error: any) {
     console.error("Gemini API Detailed Error:", error);
     
-    // Phân loại lỗi để App.tsx xử lý
-    const msg = error.message || "";
-    if (msg.includes("API key not valid") || msg.includes("403") || msg.includes("invalid_argument")) {
+    const errorBody = error.message || "";
+    
+    // Kiểm tra lỗi 429 - Hết hạn mức
+    if (errorBody.includes("429") || errorBody.includes("RESOURCE_EXHAUSTED") || errorBody.includes("quota")) {
+      throw new Error("QUOTA_EXHAUSTED");
+    }
+    
+    if (errorBody.includes("401") || errorBody.includes("403") || errorBody.includes("API key not valid")) {
       throw new Error("API_KEY_INVALID");
     }
-    if (msg.includes("model not found") || msg.includes("404")) {
+
+    if (errorBody.includes("404")) {
       throw new Error("MODEL_NOT_AVAILABLE");
     }
-    throw new Error(msg || "Unknown connection error");
+
+    throw new Error(errorBody || "Unknown connection error");
   }
 }

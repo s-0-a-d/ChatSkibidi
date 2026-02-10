@@ -72,7 +72,7 @@ const App: React.FC = () => {
     if (authMode === 'register') {
       if (!username || !key) { setError("Please fill all fields"); return; }
       if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
-        setError("Username already exists");
+        setError(lang === 'vi' ? "Tên đăng nhập đã tồn tại" : "Username already exists");
         return;
       }
       const newUser = { username, key };
@@ -83,7 +83,7 @@ const App: React.FC = () => {
       if (user) {
         setCurrentUser(user);
       } else {
-        setError("Key not recognized. Please register first with this key.");
+        setError(lang === 'vi' ? "Key không hợp lệ hoặc chưa được đăng ký." : "Key not recognized. Please register first.");
       }
     }
     setError(null);
@@ -164,13 +164,22 @@ const App: React.FC = () => {
       }
     } catch (err: any) {
       console.error("Chat Error:", err);
-      let errorMsg = "An unexpected error occurred.";
-      if (err.message === "API_KEY_INVALID") errorMsg = "Invalid API Key. Please check your credentials.";
-      else if (err.message === "MODEL_NOT_AVAILABLE") errorMsg = "The model is currently unavailable in your region.";
-      else errorMsg = `Error: ${err.message}`;
+      let errorMsg = "";
+      
+      if (err.message === "QUOTA_EXHAUSTED") {
+        errorMsg = lang === 'vi' 
+          ? "Bạn đã hết hạn mức sử dụng API miễn phí (Quota). Vui lòng đợi 1 phút hoặc đổi API Key khác." 
+          : "You've exceeded your free API quota. Please wait a minute or use a different API Key.";
+      } else if (err.message === "API_KEY_INVALID") {
+        errorMsg = lang === 'vi' 
+          ? "API Key không hợp lệ. Vui lòng kiểm tra lại thông tin đăng nhập." 
+          : "Invalid API Key. Please check your credentials.";
+      } else {
+        errorMsg = (lang === 'vi' ? "Lỗi: " : "Error: ") + err.message;
+      }
       
       setError(errorMsg);
-      // Remove the empty AI message if failed
+      // Xóa tin nhắn AI trống nếu lỗi
       setThreads(prev => prev.map(t => t.id === activeId ? {
         ...t,
         messages: t.messages.filter(m => m.id !== aiMsgId)
