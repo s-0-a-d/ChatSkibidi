@@ -4,7 +4,7 @@ export enum Role {
   MODEL = 'model',
 }
 
-export type Language = 'en' | 'vi';
+export type Language = 'en' | 'vi' | 'fr' | 'ja' | 'ko' | 'zh';
 
 export interface Message {
   id: string;
@@ -15,16 +15,15 @@ export interface Message {
 
 export interface ChatThread {
   id: string;
-  userId: string;
   title: string;
   messages: Message[];
   lastUpdated: Date;
 }
 
-export interface User {
-  username: string;
-  key: string;
-  password: string; // Thêm mật khẩu
+export interface AppSettings {
+  apiKey: string;
+  language: Language;
+  useSearch: boolean;
 }
 
 export interface ChatState {
