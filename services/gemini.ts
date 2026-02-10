@@ -1,35 +1,47 @@
 
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
-import { Role, Language, Message, Attachment } from "../types.ts";
+import { Role, Language, Message, Attachment, AppMode } from "../types.ts";
 
-const getSystemInstruction = (lang: Language) => {
+const ODH_DOCUMENTATION = `
+Framework: odh_shared_plugins (Roblox Plugin System)
+API Reference:
+1. Initialize: local shared = odh_shared_plugins
+2. Create Section: local my_own_section = shared.AddSection(name: string)
+3. Labels: section:AddLabel(text: string)
+4. Paragraphs: section:AddParagraph(title: string, desc: string)
+5. Toggles: section:AddToggle(name: string, callback: function(bool))
+6. Sliders: section:AddSlider(name: string, min: int, max: int, default: int, callback: function(int))
+7. Dropdowns: local d = section:AddDropdown(name: string, list: table, callback: function(selected))
+   - d.Select(val), d.Change(new_list)
+8. PlayerDropdown: section:AddPlayerDropdown(name: string, callback: function(player))
+9. Textbox: section:AddTextBox(name: string, callback: function(text))
+10. Buttons: section:AddButton(name: string, callback: function())
+11. Keybinds: section:AddKeybind(name: string, defaultKey: string, callback: function())
+12. Notifications: shared.Notify(msg, type) -> 1:SUCCESS, 2:ERROR, 3:WARN, 4:INFO
+13. Identifiers: shared.is_premium_user, shared.discord_name, shared.game_name (e.g. "Murder Mystery 2")
+`;
+
+const getSystemInstruction = (lang: Language, mode: AppMode) => {
   const now = new Date();
-  const dateStr = now.toLocaleDateString(lang, { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  });
+  const dateStr = now.toLocaleDateString(lang, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   
-  const greetings: Record<Language, string> = {
-    en: `You are Mồn Lèo AI, a super intelligent AI assistant developed by 'Thanh'. Today is: ${dateStr}.`,
-    vi: `Bạn là Mồn Lèo AI, một trợ lý ảo siêu thông minh được phát triển bởi 'Thanh'. Hôm nay là: ${dateStr}.`,
-    fr: `Vous êtes Mồn Lèo AI, un assistant IA super intelligent développé par 'Thanh'. Aujourd'hui nous sommes le : ${dateStr}.`,
-    ja: `あなたは 'Thanh' によって開発された超知的な AI アシスタント、Mồn Lèo AI です。今日は ${dateStr} です。`,
-    ko: `당신은 'Thanh'이 개발한 초지능 AI 어시스턴트 Mồn Lèo AI입니다. 오늘은 ${dateStr}입니다.`,
-    zh: `你是 Mồn Lèo AI，由 'Thanh' 开发的超级智能 AI 助手。今天是：${dateStr}。`
-  };
+  let basePrompt = "";
+  if (mode === 'odh_plugin') {
+    basePrompt = `You are ODH Plugin Maker AI. Your absolute priority is generating Lua scripts for Roblox executors using the odh_shared_plugins framework.
+    DOCUMENTATION:
+    ${ODH_DOCUMENTATION}
+    
+    Rules for ODH Mode:
+    1. Always provide complete, ready-to-use Lua code blocks.
+    2. Use the exact API methods from the documentation.
+    3. If the user asks for a feature like "Aimbot" or "ESP", implement the UI components using this framework.
+    4. Respond in ${lang === 'vi' ? 'Vietnamese' : 'English'} but keep code comments relevant.`;
+  } else {
+    basePrompt = `You are Mồn Lèo AI, a super intelligent AI assistant developed by 'Thanh'. Today is: ${dateStr}.
+    Respond naturally in ${lang}. Your name is always 'Mồn Lèo AI'. You can see images and read PDF documents.`;
+  }
 
-  const rules: Record<Language, string> = {
-    en: "\nInstructions:\n1. Respond naturally in English.\n2. Keep a professional yet friendly tone.\n3. Your name is always 'Mồn Lèo AI'.\n4. You can see images and read PDF documents if the user provides them.",
-    vi: "\nHướng dẫn:\n1. Trả lời bằng tiếng Việt một cách tự nhiên.\n2. Giữ phong cách chuyên nghiệp nhưng thân thiện.\n3. Tên của bạn luôn là 'Mồn Lèo AI'.\n4. Bạn có thể nhìn hình ảnh và đọc tài liệu PDF nếu người dùng cung cấp.",
-    fr: "\nInstructions :\n1. Répondez naturellement en français.\n2. Gardez un ton professionnel mais amical.\n3. Votre nom est 'Mồn Lèo AI'.\n4. Bạn có thể xem hình ảnh và tài liệu PDF.",
-    ja: "\n指示：\n1. 自然な日本語で答えてください。\n2. あなたの名前は 'Mồn Lèo AI' です。\n3. 画像やPDFドキュメントを読み取ることができます。",
-    ko: "\n지침:\n1. 자연스러운 한국어로 응답하십시오.\n2. 당신의 이름은 'Mồn Lèo AI'입니다.\n3. 이미지와 PDF 문서를 읽을 수 있습니다.",
-    zh: "\n说明：\n1. 用自然的中文回答。\n2. 你的名字永远是 'Mồn Lèo AI'。\n3. 你可以查看图片和阅读 PDF 文档。"
-  };
-
-  return greetings[lang] + rules[lang];
+  return basePrompt;
 };
 
 export async function* sendMessageStream(
@@ -38,13 +50,13 @@ export async function* sendMessageStream(
   history: Message[], 
   currentText: string, 
   attachment?: Attachment,
-  useSearch: boolean = false
+  useSearch: boolean = false,
+  mode: AppMode = 'standard'
 ) {
   try {
     const ai = new GoogleGenAI({ apiKey });
-    const tools = useSearch ? [{ googleSearch: {} }] : undefined;
+    const tools = useSearch && mode === 'standard' ? [{ googleSearch: {} }] : undefined;
 
-    // Chuyển đổi lịch sử chat sang định dạng API
     const contents = history.map(m => ({
       role: m.role,
       parts: m.attachment ? [
@@ -53,25 +65,19 @@ export async function* sendMessageStream(
       ] : [{ text: m.text }]
     }));
 
-    // Thêm tin nhắn hiện tại
     const currentParts: any[] = [{ text: currentText }];
     if (attachment) {
-      currentParts.unshift({
-        inlineData: {
-          data: attachment.data,
-          mimeType: attachment.mimeType
-        }
-      });
+      currentParts.unshift({ inlineData: { data: attachment.data, mimeType: attachment.mimeType } });
     }
 
     contents.push({ role: Role.USER, parts: currentParts });
 
     const result = await ai.models.generateContentStream({
-      model: 'gemini-3-flash-preview',
+      model: mode === 'odh_plugin' ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview',
       contents: contents,
       config: {
-        systemInstruction: getSystemInstruction(lang),
-        temperature: 0.7,
+        systemInstruction: getSystemInstruction(lang, mode),
+        temperature: mode === 'odh_plugin' ? 0.4 : 0.7, // Lower temperature for better code generation
         tools: tools
       }
     });
@@ -83,7 +89,6 @@ export async function* sendMessageStream(
   } catch (error: any) {
     const errorBody = error.message || "";
     if (errorBody.includes("429") || errorBody.includes("RESOURCE_EXHAUSTED")) throw new Error("QUOTA_EXHAUSTED");
-    if (errorBody.includes("401") || errorBody.includes("403")) throw new Error("API_KEY_INVALID");
     throw new Error(errorBody || "Unknown error");
   }
 }

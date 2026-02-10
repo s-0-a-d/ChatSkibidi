@@ -42,19 +42,24 @@
             animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
         
-        .prose { max-width: none; font-size: 0.9375rem; line-height: 1.6; color: currentColor; }
+        .prose { max-width: 100%; font-size: 0.9375rem; line-height: 1.6; color: currentColor; word-wrap: break-word; }
         .prose p { margin-top: 0; margin-bottom: 0.75rem; }
         .prose p:last-child { margin-bottom: 0; }
         .prose h1, .prose h2, .prose h3 { margin-top: 1.5rem; margin-bottom: 0.75rem; font-weight: 700; color: #111827; }
         .prose ul, .prose ol { margin-top: 0.75rem; margin-bottom: 0.75rem; padding-left: 1.5rem; }
         .prose li { margin-bottom: 0.375rem; }
-        .prose code { background-color: rgba(0,0,0,0.06); padding: 0.2rem 0.4rem; border-radius: 6px; font-family: 'Fira Code', monospace; font-size: 0.85em; font-weight: 500; }
-        .prose pre { background-color: #1e1e1e; color: #d4d4d4; padding: 0; border-radius: 12px; overflow: hidden; margin: 1.25rem 0; border: 1px solid rgba(255,255,255,0.05); shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
-        .prose pre code { background-color: transparent; padding: 1.25rem; display: block; color: inherit; overflow-x: auto; font-size: 0.85rem; line-height: 1.5; }
+        .prose code { background-color: rgba(0,0,0,0.06); padding: 0.2rem 0.4rem; border-radius: 6px; font-family: 'Fira Code', monospace; font-size: 0.85em; font-weight: 500; word-break: break-word; }
+        .prose pre { background-color: #1e1e1e; color: #d4d4d4; padding: 0; border-radius: 12px; overflow: hidden; margin: 1.25rem 0; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); width: 100%; }
+        .prose pre code { background-color: transparent; padding: 1rem; display: block; color: inherit; overflow-x: auto; font-size: 0.825rem; line-height: 1.5; white-space: pre; }
         
-        /* Mobile adjustment for chat input area */
         @media (max-width: 768px) {
             .prose { font-size: 0.875rem; }
+            .prose pre code { 
+                padding: 0.75rem; 
+                font-size: 0.75rem; 
+                white-space: pre-wrap; /* Tự động xuống dòng trên mobile */
+                word-break: break-all;
+            }
         }
     </style>
     <script type="importmap">

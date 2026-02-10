@@ -52,7 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               threads.map((thread) => (
                 <div key={thread.id} onClick={() => onSelect(thread.id)} className={`group flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all border ${currentThreadId === thread.id ? 'bg-white/10 border-white/10 text-white' : 'border-transparent hover:bg-white/5 text-gray-500 hover:text-gray-300'}`}>
                   <div className="flex items-center gap-3 min-w-0">
-                    <i className={`fa-regular fa-comment-dots text-xs ${currentThreadId === thread.id ? 'text-indigo-400' : 'text-gray-700 group-hover:text-gray-500'}`}></i>
+                    <i className={`fa-solid ${thread.mode === 'odh_plugin' ? 'fa-code text-orange-400' : 'fa-comment-dots text-indigo-400'} text-xs ${currentThreadId === thread.id ? 'opacity-100' : 'opacity-40 group-hover:opacity-70'}`}></i>
                     <span className="text-xs font-bold truncate tracking-tight">{thread.title}</span>
                   </div>
                   <button onClick={(e) => onDelete(thread.id, e)} className="p-2 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all"><i className="fa-solid fa-trash-can text-[10px]"></i></button>
