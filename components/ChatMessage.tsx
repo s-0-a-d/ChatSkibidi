@@ -57,6 +57,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
     navigator.clipboard.writeText(message.text);
   };
 
+  const isImage = message.attachment?.mimeType.startsWith('image/');
+
   return (
     <div className={`flex w-full mb-8 animate-fade-in ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div className={`flex max-w-[92%] md:max-w-[80%] ${isUser ? 'flex-row-reverse' : 'flex-row'} items-start`}>
@@ -70,6 +72,26 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
               ? 'message-bubble-user rounded-tr-none' 
               : 'message-bubble-ai rounded-tl-none border border-gray-100 bg-white'
           }`}>
+            
+            {message.attachment && (
+              <div className="mb-3">
+                {isImage ? (
+                  <img 
+                    src={message.attachment.url} 
+                    alt="Attached" 
+                    className="max-w-full rounded-xl border border-gray-200 cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => window.open(message.attachment?.url, '_blank')}
+                  />
+                ) : (
+                  <div className="flex items-center gap-3 p-3 bg-white/50 border border-gray-200 rounded-xl">
+                    <i className="fa-solid fa-file-pdf text-red-500 text-xl"></i>
+                    <span className="text-[10px] font-bold text-gray-700 truncate">{message.attachment.name || 'Document.pdf'}</span>
+                    <a href={message.attachment.url} target="_blank" rel="noreferrer" className="ml-auto text-indigo-600"><i className="fa-solid fa-arrow-up-right-from-square text-[10px]"></i></a>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className={`prose`}>
               <ReactMarkdown
                 components={{
@@ -93,7 +115,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
             )}
           </div>
           <span className={`text-[9px] mt-1.5 text-gray-400 font-bold uppercase tracking-wider px-1`}>
-            {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>
         </div>
       </div>

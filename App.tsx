@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { createChatSession, sendMessageStream } from './services/gemini.ts';
-import { Message, Role, ChatThread, Language, AppSettings } from './types.ts';
+import { sendMessageStream } from './services/gemini.ts';
+import { Message, Role, ChatThread, Language, AppSettings, Attachment } from './types.ts';
 import ChatMessage from './components/ChatMessage.tsx';
 import ChatInput from './components/ChatInput.tsx';
 import Sidebar from './components/Sidebar.tsx';
@@ -152,7 +152,7 @@ const translations: Record<Language, any> = {
     confirmReset: "您确定吗？这将永久删除所有对话。",
     placeholder: "问 Mồn Lèo AI 任何问题...",
     noChats: "暂无对话。",
-    footerNote: "Gemini AI 可能会提供不准确的信息。",
+    footerNote: "Gemini AI 可能会提供 un 准确的信息。",
     searchWarning: "注意：免费 API 的搜索配额非常有限。"
   }
 };
@@ -183,7 +183,6 @@ const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
-  const chatSessionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const ui = translations[settings.language] || translations.en;
@@ -192,19 +191,6 @@ const App: React.FC = () => {
 
   useEffect(() => { localStorage.setItem(STORAGE_THREADS, JSON.stringify(threads)); }, [threads]);
   useEffect(() => { localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(settings)); }, [settings]);
-
-  const initChat = useCallback((force = false) => {
-    if (!chatSessionRef.current || force) {
-      try {
-        chatSessionRef.current = createChatSession(settings.apiKey, settings.language, settings.useSearch);
-        setError(null);
-      } catch (e: any) {
-        setError(e.message);
-      }
-    }
-  }, [settings]);
-
-  useEffect(() => { initChat(true); }, [initChat]);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -222,21 +208,29 @@ const App: React.FC = () => {
     setThreads([newThread, ...threads]);
     setCurrentThreadId(newId);
     setIsSidebarOpen(false);
-    initChat(true);
   };
 
-  const handleSendMessage = async (text: string) => {
+  const handleSendMessage = async (text: string, attachment?: Attachment) => {
     let activeId = currentThreadId;
     if (!activeId) {
       const newId = Date.now().toString();
-      const newThread: ChatThread = { id: newId, title: text.slice(0, 30), messages: [], lastUpdated: new Date() };
+      const newThread: ChatThread = { id: newId, title: text.slice(0, 30) || 'New Chat', messages: [], lastUpdated: new Date() };
       setThreads(prev => [newThread, ...prev]);
       activeId = newId;
       setCurrentThreadId(newId);
     }
 
-    if (!chatSessionRef.current) initChat();
-    const userMsg: Message = { id: Date.now().toString(), role: Role.USER, text, timestamp: new Date() };
+    const userMsg: Message = { 
+      id: Date.now().toString(), 
+      role: Role.USER, 
+      text, 
+      timestamp: new Date(),
+      attachment 
+    };
+
+    // Lấy lịch sử hiện tại cho API (không bao gồm câu chào mặc định nếu cần)
+    const currentHistory = threads.find(t => t.id === activeId)?.messages || [];
+
     setThreads(prev => prev.map(t => t.id === activeId ? { ...t, messages: [...t.messages, userMsg], lastUpdated: new Date() } : t));
     setIsTyping(true);
     setError(null);
@@ -247,7 +241,15 @@ const App: React.FC = () => {
 
     try {
       let full = '';
-      const stream = sendMessageStream(chatSessionRef.current, text);
+      const stream = sendMessageStream(
+        settings.apiKey, 
+        settings.language, 
+        currentHistory, 
+        text, 
+        attachment, 
+        settings.useSearch
+      );
+      
       for await (const chunk of stream) {
         full += chunk;
         setThreads(prev => prev.map(t => t.id === activeId ? {
