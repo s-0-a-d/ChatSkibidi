@@ -15,7 +15,7 @@ export interface Message {
 
 export interface ChatThread {
   id: string;
-  userId: string; // Gắn thread với người dùng
+  userId: string;
   title: string;
   messages: Message[];
   lastUpdated: Date;
@@ -24,6 +24,7 @@ export interface ChatThread {
 export interface User {
   username: string;
   key: string;
+  password: string; // Thêm mật khẩu
 }
 
 export interface ChatState {

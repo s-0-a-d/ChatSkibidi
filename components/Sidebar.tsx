@@ -9,6 +9,7 @@ interface SidebarProps {
   onNewChat: () => void;
   onDelete: (id: string, e: React.MouseEvent) => void;
   onLogout: () => void;
+  onOpenSettings: () => void;
   isOpen: boolean;
   onClose: () => void;
   userName: string;
@@ -23,6 +24,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onNewChat, 
   onDelete, 
   onLogout,
+  onOpenSettings,
   isOpen,
   onClose,
   userName,
@@ -32,7 +34,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     newChat: lang === 'vi' ? 'Tin nhắn mới' : 'New Chat',
     history: lang === 'vi' ? 'Lịch sử trò chuyện' : 'Chat History',
     noChat: lang === 'vi' ? 'Chưa có hội thoại nào' : 'No chats yet',
-    logout: lang === 'vi' ? 'Đăng xuất' : 'Logout'
+    logout: lang === 'vi' ? 'Đăng xuất' : 'Logout',
+    settings: lang === 'vi' ? 'Đổi API Key' : 'Change API Key'
   };
 
   return (
@@ -71,7 +74,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                  <span className="text-xs font-bold text-white truncate">{userName}</span>
                </div>
             </div>
-            <button onClick={onLogout} className="w-full flex items-center gap-3 px-3 py-2 text-gray-500 hover:text-white hover:bg-white/5 rounded-xl transition-all text-xs font-bold">
+            
+            <button onClick={onOpenSettings} className="w-full flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-all text-[10px] font-bold">
+              <i className="fa-solid fa-key w-4 text-amber-400"></i> {t.settings}
+            </button>
+
+            <button onClick={onLogout} className="w-full flex items-center gap-3 px-3 py-2 text-gray-500 hover:text-white hover:bg-white/5 rounded-xl transition-all text-[10px] font-bold">
               <i className="fa-solid fa-arrow-right-from-bracket w-4"></i> {t.logout}
             </button>
           </div>
