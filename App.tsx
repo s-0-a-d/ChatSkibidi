@@ -6,10 +6,11 @@ import ChatMessage from './components/ChatMessage.tsx';
 import ChatInput from './components/ChatInput.tsx';
 import Sidebar from './components/Sidebar.tsx';
 
-const USERS_KEY = 'mon_leo_users_db';
-const CURRENT_USER_KEY = 'mon_leo_current_user';
-const THREADS_KEY = 'mon_leo_threads_v3';
-const LANG_KEY = 'mon_leo_lang';
+// Đổi tên các key để reset toàn bộ dữ liệu cũ (Tương đương reset server)
+const USERS_KEY = 'mon_leo_users_v4';
+const CURRENT_USER_KEY = 'mon_leo_current_user_v4';
+const THREADS_KEY = 'mon_leo_threads_v4';
+const LANG_KEY = 'mon_leo_lang_v4';
 
 const App: React.FC = () => {
   const [users, setUsers] = useState<User[]>(() => JSON.parse(localStorage.getItem(USERS_KEY) || '[]'));
@@ -17,7 +18,7 @@ const App: React.FC = () => {
     const saved = localStorage.getItem(CURRENT_USER_KEY);
     return saved ? JSON.parse(saved) : null;
   });
-  const [lang, setLang] = useState<Language>(() => (localStorage.getItem(LANG_KEY) as Language) || 'en');
+  const [lang, setLang] = useState<Language>(() => (localStorage.getItem(LANG_KEY) as Language) || 'vi');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -75,7 +76,7 @@ const App: React.FC = () => {
         setError(lang === 'vi' ? "Tên đăng nhập đã tồn tại" : "Username already exists");
         return;
       }
-      const newUser: User = { username, password, key: '' }; // API Key mặc định trống
+      const newUser: User = { username, password, key: '' };
       setUsers([...users, newUser]);
       setCurrentUser(newUser);
     } else {
@@ -110,6 +111,17 @@ const App: React.FC = () => {
     alert(lang === 'vi' ? "Cập nhật API Key thành công!" : "API Key updated successfully!");
   };
 
+  const handleResetSystem = () => {
+    const confirm = window.confirm(lang === 'vi' 
+      ? "CẢNH BÁO: Hành động này sẽ xóa TẤT CẢ tài khoản và tin nhắn trên hệ thống. Bạn có chắc chắn không?" 
+      : "WARNING: This will wipe ALL accounts and messages. Are you sure?");
+    
+    if (confirm) {
+      localStorage.clear();
+      window.location.reload();
+    }
+  };
+
   const initChat = useCallback((force = false) => {
     if (currentUser && currentUser.key && (!chatSessionRef.current || force)) {
       try {
@@ -119,7 +131,6 @@ const App: React.FC = () => {
         setError(e.message || "Initialization failed");
       }
     } else if (currentUser && !currentUser.key) {
-      // Không báo lỗi ngay tại đây để tránh spam UI khi vừa login
       chatSessionRef.current = null;
     }
   }, [currentUser, lang]);
@@ -149,7 +160,6 @@ const App: React.FC = () => {
   const handleSendMessage = async (text: string) => {
     if (!currentUser) return;
     
-    // Kiểm tra API Key trước khi gửi
     if (!currentUser.key) {
       setError(lang === 'vi' 
         ? "Vui lòng cài đặt API Key trong phần cài đặt (góc trái dưới) để bắt đầu trò chuyện." 
@@ -308,13 +318,9 @@ const App: React.FC = () => {
       {isSettingsOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl animate-fade-in">
-            <h3 className="text-xl font-black text-gray-900 mb-6">{lang === 'vi' ? 'Cài đặt API Key' : 'API Key Settings'}</h3>
-            <p className="text-[11px] text-gray-500 mb-6 leading-relaxed">
-              {lang === 'vi' 
-                ? 'API Key là mã bí mật giúp ứng dụng kết nối với trí tuệ nhân tạo Gemini của Google.' 
-                : 'API Key is a secret code that helps the app connect to Google\'s Gemini AI.'}
-            </p>
-            <form onSubmit={handleUpdateKey} className="space-y-4">
+            <h3 className="text-xl font-black text-gray-900 mb-6">{lang === 'vi' ? 'Cài đặt' : 'Settings'}</h3>
+            
+            <form onSubmit={handleUpdateKey} className="space-y-4 pb-6 border-b border-gray-100 mb-6">
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">API Key</label>
                 <input name="newKey" type="text" defaultValue={currentUser.key} placeholder="AIzaSy..." required className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none font-mono text-xs" />
@@ -330,6 +336,17 @@ const App: React.FC = () => {
                 </button>
               </div>
             </form>
+
+            <div className="pt-2">
+              <button 
+                onClick={handleResetSystem}
+                className="w-full bg-red-50 text-red-600 px-4 py-3 rounded-xl text-[10px] font-black hover:bg-red-100 transition-all border border-red-100 uppercase tracking-widest"
+              >
+                <i className="fa-solid fa-triangle-exclamation mr-2"></i>
+                {lang === 'vi' ? 'Reset toàn bộ hệ thống' : 'Reset All System Data'}
+              </button>
+            </div>
+            
             {error && <p className="mt-4 text-center text-[10px] text-red-500 font-bold">{error}</p>}
           </div>
         </div>
