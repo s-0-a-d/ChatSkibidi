@@ -228,7 +228,6 @@ const App: React.FC = () => {
       attachment 
     };
 
-    // Lấy lịch sử hiện tại cho API (không bao gồm câu chào mặc định nếu cần)
     const currentHistory = threads.find(t => t.id === activeId)?.messages || [];
 
     setThreads(prev => prev.map(t => t.id === activeId ? { ...t, messages: [...t.messages, userMsg], lastUpdated: new Date() } : t));
@@ -329,7 +328,7 @@ const App: React.FC = () => {
               <button onClick={createNewThread} className="bg-indigo-600 text-white px-8 py-4 rounded-2xl text-xs font-black tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 uppercase">{ui.newChat}</button>
             </div>
           ) : (
-            <div className="max-w-4xl mx-auto p-4 md:p-10 pb-32">
+            <div className="max-w-4xl mx-auto p-4 md:p-10 pb-24">
               {messages.map((m) => <ChatMessage key={m.id} message={m} />)}
               {isTyping && <div className="flex justify-start mb-6"><div className="bg-white px-4 py-3 rounded-2xl border border-gray-100 shadow-sm flex gap-2 items-center text-[10px] font-bold text-indigo-400 animate-pulse"><i className="fa-solid fa-cat animate-bounce"></i> {ui.typing}</div></div>}
               {error && (
