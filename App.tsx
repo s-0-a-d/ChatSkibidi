@@ -5,7 +5,7 @@ import { Message, Role } from './types.ts';
 import ChatMessage from './components/ChatMessage.tsx';
 import ChatInput from './components/ChatInput.tsx';
 
-const STORAGE_KEY = 'thanh_ai_chat_history';
+const STORAGE_KEY = 'mon_leo_chat_history';
 const KEY_STORAGE_KEY = 'gemini_api_key_manual';
 
 const App: React.FC = () => {
@@ -31,7 +31,7 @@ const App: React.FC = () => {
       {
         id: 'welcome',
         role: Role.MODEL,
-        text: 'Xin chào! Tôi là **Thanh AI**. Hãy nhập API Key của bạn để chúng ta bắt đầu trò chuyện nhé!',
+        text: 'Xin chào! Tôi là **Mồn Lèo**. Hãy nhập API Key của bạn để chúng ta bắt đầu "tám" chuyện nhé!',
         timestamp: new Date(),
       }
     ];
@@ -42,7 +42,6 @@ const App: React.FC = () => {
   const chatSessionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Cập nhật process.env.API_KEY để gemini.ts có thể đọc được
   useEffect(() => {
     if (apiKey) {
       process.env.API_KEY = apiKey;
@@ -135,7 +134,7 @@ const App: React.FC = () => {
     setMessages([{
       id: 'welcome',
       role: Role.MODEL,
-      text: 'Đã làm mới cuộc hội thoại. Tôi là **Thanh AI**, tôi có thể giúp gì cho bạn?',
+      text: 'Đã xóa hết lịch sử! Tôi là **Mồn Lèo**, có chuyện gì hot không nào?',
       timestamp: new Date(),
     }]);
     localStorage.removeItem(STORAGE_KEY);
@@ -154,11 +153,11 @@ const App: React.FC = () => {
       <div className="h-screen w-full flex items-center justify-center bg-gray-50 p-4">
         <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 animate-fade-in border border-gray-100">
           <div className="bg-indigo-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg rotate-3">
-            <i className="fa-solid fa-key text-2xl text-white"></i>
+            <i className="fa-solid fa-cat text-2xl text-white"></i>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">Cấu hình Thanh AI</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">Cấu hình Mồn Lèo</h2>
           <p className="text-gray-500 mb-8 text-center text-sm">
-            Dán API Key của bạn từ Google AI Studio để bắt đầu. Key này chỉ được lưu trên trình duyệt của bạn.
+            Dán API Key của bạn để bắt đầu. Ô nhập này hỗ trợ sao chép và dán dễ dàng trên điện thoại.
           </p>
           
           <form onSubmit={handleSaveKey} className="space-y-4">
@@ -166,8 +165,8 @@ const App: React.FC = () => {
               <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Gemini API Key</label>
               <input 
                 name="apiKey"
-                type="password" 
-                placeholder="AIzaSy..."
+                type="text" 
+                placeholder="Dán key AIzaSy... tại đây"
                 required
                 className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-mono text-sm"
               />
@@ -186,7 +185,7 @@ const App: React.FC = () => {
               target="_blank" 
               className="text-xs text-indigo-500 hover:text-indigo-600 font-medium flex items-center justify-center gap-1"
             >
-              Lấy API Key miễn phí tại đây <i className="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+              Lấy API Key miễn phí <i className="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
             </a>
           </div>
         </div>
@@ -200,13 +199,13 @@ const App: React.FC = () => {
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="bg-indigo-600 p-2 rounded-xl shadow-md shadow-indigo-100">
-              <i className="fa-solid fa-bolt text-white text-lg"></i>
+              <i className="fa-solid fa-cat text-white text-lg"></i>
             </div>
             <div>
-              <h1 className="text-lg font-bold text-gray-900 leading-tight">Thanh AI</h1>
+              <h1 className="text-lg font-bold text-gray-900 leading-tight">Mồn Lèo AI</h1>
               <div className="flex items-center">
                 <span className="w-2 h-2 bg-emerald-500 rounded-full mr-2 animate-pulse"></span>
-                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Trực tuyến</span>
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Đang thức</span>
               </div>
             </div>
           </div>
