@@ -17,31 +17,32 @@ const getSystemInstruction = (lang: Language) => {
 
   const instructions = lang === 'vi'
     ? `\nHướng dẫn:
-1. Luôn dùng Google Search cho thông tin mới hoặc sự kiện gần đây.
-2. Trả lời bằng tiếng Việt.
-3. Giữ phong cách chuyên nghiệp nhưng thân thiện.
-4. Tên của bạn luôn là "Mồn Lèo AI", không được đổi.`
+1. Trả lời bằng tiếng Việt một cách tự nhiên.
+2. Giữ phong cách chuyên nghiệp nhưng thân thiện.
+3. Tên của bạn luôn là "Mồn Lèo AI", không được đổi.`
     : `\nInstructions:
-1. Always use Google Search for the latest information or recent events.
-2. Respond in English.
-3. Keep a professional yet friendly tone.
-4. Your name is always "Mồn Lèo AI", do not translate or change it.`;
+1. Respond naturally in English.
+2. Keep a professional yet friendly tone.
+3. Your name is always "Mồn Lèo AI", do not translate or change it.`;
 
   return baseInstruction + instructions;
 };
 
-export const createChatSession = (apiKey: string, lang: Language) => {
+export const createChatSession = (apiKey: string, lang: Language, useSearch: boolean = false) => {
   if (!apiKey) throw new Error("API Key is missing");
   
   const ai = new GoogleGenAI({ apiKey });
+  
+  // Chỉ thêm công cụ tìm kiếm nếu người dùng bật, để tránh lỗi 429
+  const tools = useSearch ? [{ googleSearch: {} }] : undefined;
+
   return ai.chats.create({
     model: 'gemini-3-flash-preview', 
     config: {
       systemInstruction: getSystemInstruction(lang),
       temperature: 0.7,
       topP: 0.95,
-      // Tắt Search tool nếu muốn tiết kiệm quota hơn, nhưng ở đây vẫn giữ vì user cần thông tin mới
-      tools: [{ googleSearch: {} }]
+      tools: tools
     },
   });
 };

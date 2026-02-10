@@ -6,7 +6,6 @@ import ChatMessage from './components/ChatMessage.tsx';
 import ChatInput from './components/ChatInput.tsx';
 import Sidebar from './components/Sidebar.tsx';
 
-// Đổi tên các key để reset toàn bộ dữ liệu cũ (Tương đương reset server)
 const USERS_KEY = 'mon_leo_users_v4';
 const CURRENT_USER_KEY = 'mon_leo_current_user_v4';
 const THREADS_KEY = 'mon_leo_threads_v4';
@@ -19,6 +18,7 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : null;
   });
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem(LANG_KEY) as Language) || 'vi');
+  const [useSearch, setUseSearch] = useState(false); // Mặc định tắt search để tiết kiệm quota
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -125,7 +125,7 @@ const App: React.FC = () => {
   const initChat = useCallback((force = false) => {
     if (currentUser && currentUser.key && (!chatSessionRef.current || force)) {
       try {
-        chatSessionRef.current = createChatSession(currentUser.key, lang);
+        chatSessionRef.current = createChatSession(currentUser.key, lang, useSearch);
         setError(null);
       } catch (e: any) {
         setError(e.message || "Initialization failed");
@@ -133,7 +133,7 @@ const App: React.FC = () => {
     } else if (currentUser && !currentUser.key) {
       chatSessionRef.current = null;
     }
-  }, [currentUser, lang]);
+  }, [currentUser, lang, useSearch]);
 
   useEffect(() => { initChat(true); }, [initChat]);
 
@@ -210,7 +210,9 @@ const App: React.FC = () => {
       console.error("Chat Error:", err);
       let errorMsg = "";
       if (err.message === "QUOTA_EXHAUSTED") {
-        errorMsg = lang === 'vi' ? "Hết hạn mức API. Vui lòng đợi 1 phút." : "API quota exceeded. Please wait a minute.";
+        errorMsg = lang === 'vi' 
+          ? "Bạn đã hết hạn mức API miễn phí. Hãy thử tắt 'Tìm kiếm Google' hoặc đợi 1 phút." 
+          : "API quota exceeded. Try disabling 'Google Search' or wait a minute.";
       } else if (err.message === "API_KEY_INVALID") {
         errorMsg = lang === 'vi' ? "API Key không hợp lệ hoặc đã bị vô hiệu hóa." : "Invalid or disabled API Key.";
       } else {
@@ -276,7 +278,19 @@ const App: React.FC = () => {
       <div className="flex-1 flex flex-col h-full relative min-w-0">
         <header className="h-16 border-b border-gray-100 flex items-center justify-between px-4 md:px-8 bg-white/80 backdrop-blur-md z-10">
           <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-xl"><i className="fa-solid fa-bars-staggered"></i></button>
-          <h2 className="text-sm font-bold text-gray-900 truncate max-w-[200px]">{currentThread?.title || "Mồn Lèo AI"}</h2>
+          <div className="flex items-center gap-4">
+             <h2 className="text-sm font-bold text-gray-900 truncate max-w-[150px]">{currentThread?.title || "Mồn Lèo AI"}</h2>
+             {/* Toggle Search UI */}
+             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full cursor-pointer hover:bg-gray-200 transition-colors" onClick={() => setUseSearch(!useSearch)}>
+                <i className={`fa-solid fa-globe text-[10px] ${useSearch ? 'text-blue-500' : 'text-gray-400'}`}></i>
+                <span className="text-[10px] font-bold text-gray-600 uppercase tracking-tighter">
+                  {lang === 'vi' ? (useSearch ? 'Đang tìm kiếm' : 'Tìm kiếm tắt') : (useSearch ? 'Search On' : 'Search Off')}
+                </span>
+                <div className={`w-6 h-3.5 rounded-full p-0.5 transition-colors ${useSearch ? 'bg-blue-500' : 'bg-gray-300'}`}>
+                  <div className={`w-2.5 h-2.5 bg-white rounded-full transition-transform ${useSearch ? 'translate-x-2.5' : 'translate-x-0'}`}></div>
+                </div>
+             </div>
+          </div>
           <div className="flex items-center gap-3">
             <select value={lang} onChange={(e) => setLang(e.target.value as Language)} className="bg-gray-50 border-none rounded-lg px-2 py-1 text-[10px] font-bold text-indigo-600 focus:ring-0 cursor-pointer">
               <option value="en">ENGLISH</option>
@@ -300,7 +314,13 @@ const App: React.FC = () => {
                 </div>
               )}
 
-              <button onClick={createNewThread} className="bg-indigo-600 text-white px-6 py-3 rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all">{lang === 'vi' ? 'Chat mới' : 'New Chat'}</button>
+              <div className="flex flex-col gap-2 w-full">
+                <button onClick={createNewThread} className="bg-indigo-600 text-white px-6 py-3 rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all">{lang === 'vi' ? 'Chat mới' : 'New Chat'}</button>
+                <button onClick={() => setUseSearch(!useSearch)} className={`px-6 py-2 rounded-xl text-[10px] font-bold transition-all border ${useSearch ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-gray-200 text-gray-500'}`}>
+                  <i className="fa-solid fa-globe mr-2"></i>
+                  {lang === 'vi' ? (useSearch ? 'Tìm kiếm Google: Bật' : 'Tìm kiếm Google: Tắt') : (useSearch ? 'Google Search: On' : 'Google Search: Off')}
+                </button>
+              </div>
             </div>
           ) : (
             <div className="max-w-4xl mx-auto p-4 md:p-10 pb-32">
