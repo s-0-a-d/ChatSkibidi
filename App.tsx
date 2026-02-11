@@ -9,6 +9,7 @@ import Sidebar from './components/Sidebar.tsx';
 const SYSTEM_API_KEY = 'AIzaSyDrOJD6P_8TZ7CKMWpIx2cECGOeG4UheD8';
 const STORAGE_THREADS = 'mon_leo_threads_v7';
 const STORAGE_SETTINGS = 'mon_leo_settings_v7';
+const CAT_AVATAR_URL = "https://i.pinimg.com/originals/03/91/9c/03919c0724806a6669919f9760773f32.jpg";
 
 const translations: Record<Language, any> = {
   en: { title: "Mồn Lèo AI", subtitle: "AI Assistant by Thanh", newChat: "New Chat", history: "Chat History", settings: "Settings", apiKey: "API Key", lang: "Language", search: "Google Search", reset: "Reset Data", cancel: "Cancel", save: "Save", welcome: "Hello! Mồn Lèo AI is ready.", typing: "Thinking...", errorQuota: "Quota exceeded.", placeholder: "Ask anything...", footerNote: "AI may be inaccurate.", modeLabel: "Mode" },
@@ -19,7 +20,7 @@ const translations: Record<Language, any> = {
   zh: { title: "Mồn Lèo AI", subtitle: "Thanh 的 AI", newChat: "新对话", history: "历史", settings: "设置", apiKey: "API 密钥", lang: "语言", search: "搜索", reset: "重置", cancel: "取消", save: "保存", welcome: "你好！", typing: "思考中...", errorQuota: "配额已满。", placeholder: "向我提问...", footerNote: "可能不准确。", modeLabel: "模式" },
   es: { title: "Mồn Lèo AI", subtitle: "Asistente de Thanh", newChat: "Nuevo Chat", history: "Historial", settings: "Ajustes", apiKey: "Clave API", lang: "Idioma", search: "Buscar", reset: "Reiniciar", cancel: "Cancelar", save: "Guardar", welcome: "¡Hola!", typing: "Pensando...", errorQuota: "Cuota excedida.", placeholder: "Pregunta algo...", footerNote: "La IA puede errar.", modeLabel: "Modo" },
   de: { title: "Mồn Lèo AI", subtitle: "Assistent von Thanh", newChat: "Neuer Chat", history: "Verlauf", settings: "Setup", apiKey: "API-Key", lang: "Sprache", search: "Suche", reset: "Löschen", cancel: "Abbrechen", save: "Speichern", welcome: "Hallo!", typing: "Überlegt...", errorQuota: "Limit erreicht.", placeholder: "Frage etwas...", footerNote: "KI kann irren.", modeLabel: "Modus" },
-  it: { title: "Mồn Lèo AI", subtitle: "Assistente di Thanh", newChat: "Nuova Chat", history: "Cronologia", settings: "Impostazioni", apiKey: "Chiave API", lang: "Lingua", search: "Cerca", reset: "Reset", cancel: "Annulla", save: "Salva", welcome: "Ciao!", typing: "Pensando...", errorQuota: "Quota superata.", placeholder: "Chiedi qualcosa...", footerNote: "L'IA può sbagliare.", modeLabel: "Modalità" },
+  it: { title: "Mồn Lèo AI", subtitle: "Assistente di Thanh", newChat: "Nuova Chat", history: "Cronologia", settings: "Impostazioni", apiKey: "Chiave API", lang: "Langue", search: "Cerca", reset: "Reset", cancel: "Annulla", save: "Salva", welcome: "Ciao!", typing: "Pensando...", errorQuota: "Quota superata.", placeholder: "Chiedi qualcosa...", footerNote: "L'IA può sbagliare.", modeLabel: "Modalità" },
   pt: { title: "Mồn Lèo AI", subtitle: "Assistente do Thanh", newChat: "Novo Chat", history: "Histórico", settings: "Ajustes", apiKey: "Chave API", lang: "Idioma", search: "Pesquisa", reset: "Resetar", cancel: "Cancelar", save: "Salvar", welcome: "Olá!", typing: "Pensando...", errorQuota: "Cota excedida.", placeholder: "Pergunte algo...", footerNote: "IA pode falhar.", modeLabel: "Modo" },
   ru: { title: "Mồn Lèo AI", subtitle: "Ассистент Thanh", newChat: "Новый чат", history: "История", settings: "Настройки", apiKey: "Ключ API", lang: "Язык", search: "Поиск", reset: "Сброс", cancel: "Отмена", save: "Ок", welcome: "Привет!", typing: "Думаю...", errorQuota: "Лимит исчерпан.", placeholder: "Спросите о чем угодно...", footerNote: "ИИ может ошибаться.", modeLabel: "Режим" },
   ar: { title: "Mồn Lèo AI", subtitle: "مساعد Thanh", newChat: "دردشة جديدة", history: "السجل", settings: "الإعدادات", apiKey: "مفتاح API", lang: "اللغة", search: "بحث", reset: "إعادة تعيين", cancel: "إلغاء", save: "حفظ", welcome: "أهلاً بك!", typing: "يفكر...", errorQuota: "تجاوز الحصة.", placeholder: "اسأل أي شيء...", footerNote: "قد يكون الذكاء الاصطناعي غير دقيق.", modeLabel: "الوضع" },
@@ -80,7 +81,6 @@ const App: React.FC = () => {
     scrollToBottom(true);
   }, [currentThreadId, scrollToBottom]);
 
-  // Logic nhận phản hồi từ AI dùng chung cho cả gửi mới và chỉnh sửa
   const triggerAiResponse = async (activeId: string, text: string, attachment?: Attachment, historyOverride?: Message[]) => {
     const thread = threads.find(t => t.id === activeId);
     const modeToUse = thread?.mode || settings.currentMode;
@@ -128,13 +128,11 @@ const App: React.FC = () => {
     const msgIndex = thread.messages.findIndex(m => m.id === msgId);
     if (msgIndex === -1) return;
 
-    // Cập nhật tin nhắn đã sửa và XÓA toàn bộ các tin nhắn sau nó (phản hồi cũ)
     const editedMsg = { ...thread.messages[msgIndex], text: newText };
     const updatedHistory = [...thread.messages.slice(0, msgIndex), editedMsg];
     
     setThreads(prev => prev.map(t => t.id === currentThreadId ? { ...t, messages: updatedHistory, lastUpdated: new Date() } : t));
 
-    // Yêu cầu AI phản hồi lại từ điểm này
     const historyForAi = updatedHistory.slice(0, -1);
     await triggerAiResponse(currentThreadId, newText, editedMsg.attachment, historyForAi);
   };
@@ -234,8 +232,8 @@ const App: React.FC = () => {
         <main className="flex-1 overflow-y-auto custom-scrollbar bg-[#fafafa] flex flex-col">
           {!currentThreadId ? (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center max-w-sm mx-auto">
-              <div className={`w-20 h-20 text-white rounded-[2rem] flex items-center justify-center text-3xl mb-8 shadow-2xl transition-all ${settings.currentMode === 'odh_plugin' ? 'bg-orange-500 rotate-12 shadow-orange-100' : 'bg-indigo-600 rotate-3 shadow-indigo-100'}`}>
-                <i className={`fa-solid ${settings.currentMode === 'odh_plugin' ? 'fa-screwdriver-wrench' : 'fa-cat'}`}></i>
+              <div className={`w-24 h-24 rounded-[2.5rem] overflow-hidden mb-8 shadow-2xl transition-all ring-4 ring-white ${settings.currentMode === 'odh_plugin' ? 'rotate-12 shadow-orange-100' : 'rotate-3 shadow-indigo-100'}`}>
+                <img src={CAT_AVATAR_URL} alt="Mồn Lèo" className="w-full h-full object-cover" />
               </div>
               <h3 className="text-2xl font-black text-gray-900 mb-2">{settings.currentMode === 'odh_plugin' ? 'ODH Plugin Maker' : ui.title}</h3>
               <p className="text-sm text-gray-500">{settings.currentMode === 'odh_plugin' ? 'Roblox script generation expert.' : ui.subtitle}</p>
@@ -249,7 +247,16 @@ const App: React.FC = () => {
                   onEdit={(newText) => handleEditMessage(m.id, newText)}
                 />
               ))}
-              {isTyping && <div className="flex justify-start mb-6"><div className="bg-white px-4 py-3 rounded-2xl border border-gray-100 shadow-sm flex gap-2 items-center text-[10px] font-bold text-indigo-400 animate-pulse"><i className={`fa-solid ${currentThread?.mode === 'odh_plugin' ? 'fa-cog fa-spin' : 'fa-cat animate-bounce'}`}></i> {ui.typing}</div></div>}
+              {isTyping && (
+                <div className="flex justify-start mb-6">
+                  <div className="bg-white px-4 py-3 rounded-2xl border border-gray-100 shadow-sm flex gap-3 items-center text-[10px] font-bold text-indigo-400 animate-pulse">
+                    <div className="w-5 h-5 rounded-full overflow-hidden shrink-0">
+                      <img src={CAT_AVATAR_URL} alt="Thinking" className="w-full h-full object-cover" />
+                    </div>
+                    {ui.typing}
+                  </div>
+                </div>
+              )}
               {error && (
                 <div className="bg-red-50 text-red-600 p-6 rounded-2xl text-xs font-bold text-center mb-6 shadow-sm border border-red-100 animate-fade-in flex flex-col gap-3">
                   <i className="fa-solid fa-triangle-exclamation text-xl"></i>

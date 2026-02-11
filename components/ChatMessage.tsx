@@ -8,6 +8,8 @@ interface ChatMessageProps {
   onEdit?: (newText: string) => void;
 }
 
+const CAT_AVATAR_URL = "https://i.pinimg.com/originals/03/91/9c/03919c0724806a6669919f9760773f32.jpg";
+
 const PreComponent = ({ children, ...props }: any) => {
   const [copied, setCopied] = useState(false);
   const preRef = useRef<HTMLPreElement>(null);
@@ -75,8 +77,12 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onEdit }) => {
   return (
     <div className={`flex w-full mb-6 animate-fade-in group/msg-row ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div className={`flex max-w-[95%] md:max-w-[85%] ${isUser ? 'flex-row-reverse' : 'flex-row'} items-start min-w-0`}>
-        <div className={`flex-shrink-0 h-7 w-7 md:h-8 md:w-8 rounded-lg flex items-center justify-center text-white text-[9px] font-black shadow-sm ${isUser ? 'ml-2 md:ml-3 bg-indigo-600' : 'mr-2 md:mr-3 bg-gray-900 ring-2 ring-gray-50'}`}>
-          {isUser ? <i className="fa-solid fa-user"></i> : <i className="fa-solid fa-cat"></i>}
+        <div className={`flex-shrink-0 h-8 w-8 md:h-10 md:w-10 rounded-xl overflow-hidden shadow-sm ${isUser ? 'ml-2 md:ml-3 bg-indigo-600 flex items-center justify-center text-white text-xs' : 'mr-2 md:mr-3 ring-2 ring-gray-100'}`}>
+          {isUser ? (
+            <i className="fa-solid fa-user"></i>
+          ) : (
+            <img src={CAT_AVATAR_URL} alt="Mồn Lèo" className="w-full h-full object-cover" />
+          )}
         </div>
         
         <div className={`flex flex-col min-w-0 ${isUser ? 'items-end' : 'items-start'} overflow-visible`}>

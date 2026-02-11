@@ -15,6 +15,8 @@ interface SidebarProps {
   ui: any;
 }
 
+const CAT_AVATAR_URL = "https://i.pinimg.com/originals/03/91/9c/03919c0724806a6669919f9760773f32.jpg";
+
 const Sidebar: React.FC<SidebarProps> = ({ 
   threads, 
   currentThreadId, 
@@ -32,7 +34,9 @@ const Sidebar: React.FC<SidebarProps> = ({
       <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#0f1115] text-gray-300 transition-transform duration-500 cubic-bezier(0.16, 1, 0.3, 1) ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 md:flex md:flex-col shrink-0 border-r border-white/5`}>
         <div className="p-6 flex flex-col h-full">
           <div className="flex items-center gap-3 mb-10 px-2">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-600/20 rotate-3"><i className="fa-solid fa-cat"></i></div>
+            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-indigo-600/10 rotate-3 ring-2 ring-indigo-500/20">
+              <img src={CAT_AVATAR_URL} alt="Logo" className="w-full h-full object-cover" />
+            </div>
             <div className="flex flex-col">
               <span className="text-sm font-black text-white tracking-tight">Mồn Lèo AI</span>
               <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest opacity-70">By Thanh</span>
