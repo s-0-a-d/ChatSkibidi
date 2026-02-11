@@ -15,7 +15,7 @@ interface SidebarProps {
   ui: any;
 }
 
-const CAT_AVATAR_URL = "https://raw.githubusercontent.com/s-0-a-d/ChatSkibidi/refs/heads/main/Ảnh/IMG_20250306_151454.jpg";
+const CAT_AVATAR_URL = "https://raw.githubusercontent.com/s-0-a-d/ChatSkibidi/refs/heads/main/%E1%BA%A2nh/IMG_20250306_151454.jpg";
 
 const Sidebar: React.FC<SidebarProps> = ({ 
   threads, 

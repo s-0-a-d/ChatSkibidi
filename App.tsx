@@ -9,7 +9,8 @@ import Sidebar from './components/Sidebar.tsx';
 const SYSTEM_API_KEY = 'AIzaSyDrOJD6P_8TZ7CKMWpIx2cECGOeG4UheD8';
 const STORAGE_THREADS = 'mon_leo_threads_v7';
 const STORAGE_SETTINGS = 'mon_leo_settings_v7';
-const CAT_AVATAR_URL = "https://raw.githubusercontent.com/s-0-a-d/ChatSkibidi/refs/heads/main/Ảnh/IMG_20250306_151454.jpg";
+// Cập nhật đường dẫn đã mã hóa URL để tránh lỗi đồng bộ GitHub
+const CAT_AVATAR_URL = "https://raw.githubusercontent.com/s-0-a-d/ChatSkibidi/refs/heads/main/%E1%BA%A2nh/IMG_20250306_151454.jpg";
 
 const translations: Partial<Record<Language, any>> = {
   en: { 
