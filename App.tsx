@@ -67,7 +67,7 @@ const translations: Record<Language, any> = {
   },
   fr: { title: "Mồn Lèo AI", subtitle: "Assistant IA par Thanh", newChat: "Nouveau Chat", history: "Historique", settings: "Paramètres", apiKey: "Clé API", lang: "Langue", search: "Recherche Google", searchOn: "Recherche Activée", searchOff: "Recherche Désactivée", reset: "Réinitialiser", cancel: "Annuler", save: "Sauvegarder", welcome: "Bonjour ! Mồn Lèo AI est prêt.", typing: "Mồn Lèo AI réfléchit...", errorQuota: "Quota API épuisé.", errorKey: "Clé API invalide.", confirmReset: "Êtes-vous sûr ?", placeholder: "Demandez à Mồn Lèo AI...", noChats: "Aucune conversation.", footerNote: "Gemini AI peut être inexacte.", searchWarning: "Quota limité.", modeLabel: "Mode Chat", modeStandard: "Standard", modeODH: "ODH Plugin Maker" },
   ja: { title: "Mồn Lèo AI", subtitle: "Thanh による AI アシスタント", newChat: "新規チャット", history: "履歴", settings: "設定", apiKey: "API キー", lang: "言語", search: "Google 検索", searchOn: "検索オン", searchOff: "検索オフ", reset: "リセット", cancel: "キャンセル", save: "保存", welcome: "こんにちは！ Mồn Lèo AI です。", typing: "Mồn Lèo AI が考えています...", errorQuota: "クォータを超えました。", errorKey: "無効な API キー。", confirmReset: "本当によろしいですか？", placeholder: "Mồn Lèo AI に聞いてください...", noChats: "会話なし。", footerNote: "Gemini AI は不正確な場合があります。", searchWarning: "制限あり。", modeLabel: "チャットモード", modeStandard: "通常", modeODH: "ODH Plugin Maker" },
-  ko: { title: "Mồn Lèo AI", subtitle: "Thanh의 AI 어시스턴트", newChat: "새 채팅", history: "기록", settings: "설정", apiKey: "API 키", lang: "언어", search: "Google 검색", searchOn: "검색 켬", searchOff: "검색 끔", reset: "초기화", cancel: "취소", save: "저장", welcome: "안녕하세요! Mồn Lèo AI입니다.", typing: "Mồn Lèo AI가 생각 중...", errorQuota: "할당량 초과.", errorKey: "잘못된 API 키.", confirmReset: "확실합니까?", placeholder: "Mồn Lèo AI에게 물어보세요...", noChats: "기록 없음.", footerNote: "부정확할 수 있습니다.", searchWarning: "제한적입니다.", modeLabel: "채팅 모드", modeStandard: "표준", modeODH: "ODH Plugin Maker" },
+  ko: { title: "Mồn Lèo AI", subtitle: "Thanh의 AI 어시스턴트", newChat: "새 채팅", history: "기록", settings: "설정", apiKey: "API 키", lang: "언어", search: "Google 검색", searchOn: "검색 켬", searchOff: "검색 끔", reset: "초기화", cancel: "취소", save: "저장", welcome: "안녕하세요! Mồn Lèo AI입니다.", typing: "Mồn Lèo AI가 생각 중...", errorQuota: "할당량 초과.", errorKey: "잘못된 API 키.", confirmReset: "확실합니까?", placeholder: "Mồn Lèo AI에게 물어보세요...", noChats: "기록 없음.", footerNote: "부정확할 수 있습니다.", searchWarning: "제한적입니다.", modeLabel: "聊天模式", modeStandard: "표준", modeODH: "ODH Plugin Maker" },
   zh: { title: "Mồn Lèo AI", subtitle: "Thanh 的 AI 助手", newChat: "新对话", history: "历史", settings: "设置", apiKey: "API 密钥", lang: "语言", search: "谷歌搜索", searchOn: "搜索开启", searchOff: "搜索关闭", reset: "重置", cancel: "取消", save: "保存", welcome: "你好！Mồn Lèo AI 已就绪。", typing: "Mồn Lèo AI 正在思考...", errorQuota: "配额已用完。", errorKey: "密钥无效。", confirmReset: "确定吗？", placeholder: "向 Mồn Lèo AI 提问...", noChats: "暂无历史。", footerNote: "可能不准确。", searchWarning: "配额有限。", modeLabel: "聊天模式", modeStandard: "普通对话", modeODH: "ODH Plugin Maker" }
 };
 
@@ -98,6 +98,7 @@ const App: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const mainContentRef = useRef<HTMLElement>(null);
 
   const ui = translations[settings.language] || translations.en;
   const currentThread = threads.find(t => t.id === currentThreadId);
@@ -106,17 +107,29 @@ const App: React.FC = () => {
   useEffect(() => { localStorage.setItem(STORAGE_THREADS, JSON.stringify(threads)); }, [threads]);
   useEffect(() => { localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(settings)); }, [settings]);
 
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = useCallback((instant = false) => {
+    if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: instant ? 'auto' : 'smooth', block: 'end' });
+    }
   }, []);
-  useEffect(() => { scrollToBottom(); }, [messages, isTyping, scrollToBottom]);
+
+  // Cuộn khi có tin nhắn mới hoặc đang gõ
+  useEffect(() => { 
+    const timer = setTimeout(() => scrollToBottom(), 100);
+    return () => clearTimeout(timer);
+  }, [messages.length, isTyping, scrollToBottom]);
+
+  // Cuộn khi thay đổi luồng chat
+  useEffect(() => {
+    scrollToBottom(true);
+  }, [currentThreadId, scrollToBottom]);
 
   const createNewThread = (mode: AppMode = settings.currentMode) => {
     const newId = Date.now().toString();
     const newThread: ChatThread = {
       id: newId,
-      title: mode === 'odh_plugin' ? "ODH Plugin Maker" : ui.newChat,
-      messages: [{ id: 'w-' + newId, role: Role.MODEL, text: mode === 'odh_plugin' ? "ODH Plugin Maker ready. How can I help you build your Roblox script?" : ui.welcome, timestamp: new Date() }],
+      title: mode === 'odh_plugin' ? "Plugin " + new Date().toLocaleTimeString() : ui.newChat,
+      messages: [], // Không có tin nhắn chào mừng mặc định
       lastUpdated: new Date(),
       mode: mode
     };
@@ -128,7 +141,6 @@ const App: React.FC = () => {
   const toggleMode = () => {
     const nextMode = settings.currentMode === 'standard' ? 'odh_plugin' : 'standard';
     setSettings({...settings, currentMode: nextMode});
-    // Create new chat automatically when switching mode if no thread is active or to match mode
     createNewThread(nextMode);
   };
 
@@ -211,7 +223,7 @@ const App: React.FC = () => {
       />
       
       <div className="flex-1 flex flex-col h-full relative min-w-0">
-        <header className="h-16 border-b border-gray-100 flex items-center justify-between px-4 md:px-8 bg-white/80 backdrop-blur-md z-10">
+        <header className="h-16 border-b border-gray-100 flex items-center justify-between px-4 md:px-8 bg-white/80 backdrop-blur-md z-10 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-xl flex-shrink-0"><i className="fa-solid fa-bars-staggered"></i></button>
             <div className="flex flex-col min-w-0">
@@ -236,19 +248,17 @@ const App: React.FC = () => {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar bg-[#fafafa]">
+        <main ref={mainContentRef} className="flex-1 overflow-y-auto custom-scrollbar bg-[#fafafa] flex flex-col">
           {!currentThreadId ? (
-            <div className="h-full flex flex-col items-center justify-center p-8 text-center max-w-sm mx-auto">
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center max-w-sm mx-auto">
               <div className={`w-20 h-20 text-white rounded-[2rem] flex items-center justify-center text-3xl mb-8 shadow-2xl transition-all ${settings.currentMode === 'odh_plugin' ? 'bg-orange-500 rotate-12 shadow-orange-100' : 'bg-indigo-600 rotate-3 shadow-indigo-100'}`}>
                 <i className={`fa-solid ${settings.currentMode === 'odh_plugin' ? 'fa-screwdriver-wrench' : 'fa-cat'}`}></i>
               </div>
               <h3 className="text-2xl font-black text-gray-900 mb-2">{settings.currentMode === 'odh_plugin' ? 'ODH Plugin Maker' : ui.title}</h3>
-              <p className="text-sm text-gray-500 mb-8">{settings.currentMode === 'odh_plugin' ? 'Expert Roblox script generation for ODH shared plugins framework.' : ui.subtitle}</p>
-              
-              <button onClick={() => createNewThread()} className={`text-white px-8 py-4 rounded-2xl text-xs font-black tracking-widest transition-all shadow-xl uppercase ${settings.currentMode === 'odh_plugin' ? 'bg-orange-500 hover:bg-orange-600 shadow-orange-100' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-100'}`}>{ui.newChat}</button>
+              <p className="text-sm text-gray-500">{settings.currentMode === 'odh_plugin' ? 'Sẵn sàng tạo script Roblox chuyên nghiệp cho ODH framework.' : ui.subtitle}</p>
             </div>
           ) : (
-            <div className="max-w-4xl mx-auto p-4 md:p-10 pb-24">
+            <div className="max-w-4xl w-full mx-auto p-4 md:p-10 pb-32 flex-1">
               {messages.map((m) => <ChatMessage key={m.id} message={m} />)}
               {isTyping && <div className="flex justify-start mb-6"><div className="bg-white px-4 py-3 rounded-2xl border border-gray-100 shadow-sm flex gap-2 items-center text-[10px] font-bold text-indigo-400 animate-pulse"><i className={`fa-solid ${currentThread?.mode === 'odh_plugin' ? 'fa-cog fa-spin' : 'fa-cat animate-bounce'}`}></i> {ui.typing}</div></div>}
               {error && (
@@ -257,13 +267,15 @@ const App: React.FC = () => {
                   {error}
                 </div>
               )}
-              <div ref={messagesEndRef} />
+              <div ref={messagesEndRef} className="h-4 w-full" />
             </div>
           )}
         </main>
         
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#fafafa] via-[#fafafa] to-transparent pt-10">
-          <ChatInput onSendMessage={handleSendMessage} disabled={isTyping} placeholder={currentThread?.mode === 'odh_plugin' ? "Describe the Roblox plugin features you want..." : ui.placeholder} footerNote={ui.footerNote} />
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#fafafa] via-[#fafafa] to-transparent pt-10 pointer-events-none">
+          <div className="pointer-events-auto">
+            <ChatInput onSendMessage={handleSendMessage} disabled={isTyping} placeholder={currentThread?.mode === 'odh_plugin' ? "Yêu cầu tính năng plugin Roblox của bạn..." : ui.placeholder} footerNote={ui.footerNote} />
+          </div>
         </div>
       </div>
 
