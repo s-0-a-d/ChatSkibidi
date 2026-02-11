@@ -221,7 +221,7 @@ const App: React.FC = () => {
               <p className="text-sm text-gray-500">{settings.currentMode === 'odh_plugin' ? 'Roblox script generation expert.' : ui.subtitle}</p>
             </div>
           ) : (
-            <div className="max-w-4xl w-full mx-auto p-4 md:p-10 pb-32 flex-1">
+            <div className="max-w-4xl w-full mx-auto p-4 md:p-10 pb-40 flex-1 flex flex-col">
               {messages.map((m) => (
                 <ChatMessage 
                   key={m.id} 
@@ -236,7 +236,7 @@ const App: React.FC = () => {
                   {error}
                 </div>
               )}
-              <div ref={messagesEndRef} className="h-4 w-full" />
+              <div ref={messagesEndRef} className="h-20 w-full shrink-0" />
             </div>
           )}
         </main>

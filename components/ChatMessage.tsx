@@ -73,14 +73,14 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onEdit }) => {
   const isImage = message.attachment?.mimeType.startsWith('image/');
 
   return (
-    <div className={`flex w-full mb-6 animate-fade-in ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex w-full mb-6 animate-fade-in group/msg-row ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div className={`flex max-w-[95%] md:max-w-[85%] ${isUser ? 'flex-row-reverse' : 'flex-row'} items-start min-w-0`}>
         <div className={`flex-shrink-0 h-7 w-7 md:h-8 md:w-8 rounded-lg flex items-center justify-center text-white text-[9px] font-black shadow-sm ${isUser ? 'ml-2 md:ml-3 bg-indigo-600' : 'mr-2 md:mr-3 bg-gray-900 ring-2 ring-gray-50'}`}>
           {isUser ? <i className="fa-solid fa-user"></i> : <i className="fa-solid fa-cat"></i>}
         </div>
         
-        <div className={`flex flex-col group/msg min-w-0 ${isUser ? 'items-end' : 'items-start'} overflow-hidden`}>
-          <div className={`px-3 md:px-4 py-2.5 md:py-3 rounded-2xl shadow-sm relative w-full overflow-hidden ${
+        <div className={`flex flex-col min-w-0 ${isUser ? 'items-end' : 'items-start'} overflow-visible`}>
+          <div className={`relative px-3 md:px-4 py-2.5 md:py-3 rounded-2xl shadow-sm overflow-visible ${
             isUser 
               ? 'message-bubble-user rounded-tr-none border border-gray-100' 
               : 'message-bubble-ai rounded-tl-none border border-gray-100 bg-white'
@@ -101,16 +101,16 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onEdit }) => {
 
             <div className={`prose max-w-full overflow-hidden`}>
               {isEditing ? (
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 min-w-[200px]">
                   <textarea
                     ref={editRef}
                     value={editText}
                     onChange={(e) => setEditText(e.target.value)}
-                    className="w-full bg-white/50 border border-indigo-200 rounded-xl p-2 outline-none text-sm font-medium resize-none overflow-hidden"
+                    className="w-full bg-white border border-indigo-200 rounded-xl p-2 outline-none text-sm font-medium resize-none overflow-hidden shadow-inner"
                   />
-                  <div className="flex justify-end gap-2">
-                    <button onClick={() => { setIsEditing(false); setEditText(message.text); }} className="px-2 py-1 text-[9px] font-black uppercase text-gray-500 hover:text-red-500 transition-colors">CANCEL</button>
-                    <button onClick={handleSave} className="px-2 py-1 text-[9px] font-black uppercase text-indigo-600 hover:text-indigo-800 transition-colors">SAVE</button>
+                  <div className="flex justify-end gap-3">
+                    <button onClick={() => { setIsEditing(false); setEditText(message.text); }} className="text-[10px] font-black uppercase text-gray-400 hover:text-red-500 transition-colors">Hủy</button>
+                    <button onClick={handleSave} className="text-[10px] font-black uppercase text-indigo-600 hover:text-indigo-800 transition-colors">Lưu</button>
                   </div>
                 </div>
               ) : (
@@ -119,18 +119,21 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onEdit }) => {
                 </ReactMarkdown>
               )}
             </div>
-            
-            <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100 opacity-0 group-hover/msg:opacity-100 transition-opacity">
-              {!isUser ? (
-                <button onClick={handleCopyAll} className="text-gray-400 hover:text-indigo-600 transition-colors flex items-center gap-1.5 text-[9px] font-bold uppercase">
-                  <i className="fa-solid fa-copy"></i> COPY
-                </button>
-              ) : !isEditing && (
-                <button onClick={() => setIsEditing(true)} className="text-gray-400 hover:text-indigo-600 transition-colors flex items-center gap-1.5 text-[9px] font-bold uppercase">
-                  <i className="fa-solid fa-pen"></i> EDIT
-                </button>
-              )}
-            </div>
+
+            {/* Nút tác vụ ẩn hiện khi hover, không chiếm diện tích trong bubble */}
+            {!isEditing && (
+              <div className={`absolute bottom-0 ${isUser ? 'right-full mr-2' : 'left-full ml-2'} opacity-0 group-hover/msg-row:opacity-100 transition-opacity flex items-center gap-2`}>
+                {!isUser ? (
+                  <button onClick={handleCopyAll} title="Copy" className="w-7 h-7 bg-white border border-gray-100 rounded-full flex items-center justify-center text-gray-400 hover:text-indigo-600 shadow-sm transition-all hover:scale-110">
+                    <i className="fa-solid fa-copy text-[10px]"></i>
+                  </button>
+                ) : (
+                  <button onClick={() => setIsEditing(true)} title="Edit" className="w-7 h-7 bg-white border border-gray-100 rounded-full flex items-center justify-center text-gray-400 hover:text-indigo-600 shadow-sm transition-all hover:scale-110">
+                    <i className="fa-solid fa-pen text-[10px]"></i>
+                  </button>
+                )}
+              </div>
+            )}
           </div>
           <span className={`text-[8px] mt-1 text-gray-400 font-bold uppercase tracking-wider px-1`}>
             {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
