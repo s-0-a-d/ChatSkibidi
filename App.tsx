@@ -2,39 +2,60 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { sendMessageStream } from './services/gemini.ts';
 import { Message, Role, ChatThread, Language, AppSettings, Attachment, AppMode } from './types.ts';
-import ChatMessage from './components/ChatMessage.tsx';
+import ChatMessage from './services/ChatMessage.tsx';
 import ChatInput from './components/ChatInput.tsx';
 import Sidebar from './components/Sidebar.tsx';
 
 const SYSTEM_API_KEY = 'AIzaSyDrOJD6P_8TZ7CKMWpIx2cECGOeG4UheD8';
 const STORAGE_THREADS = 'mon_leo_threads_v7';
 const STORAGE_SETTINGS = 'mon_leo_settings_v7';
-const CAT_AVATAR_URL = "https://i.pinimg.com/originals/03/91/9c/03919c0724806a6669919f9760773f32.jpg";
+const CAT_AVATAR_URL = "https://raw.githubusercontent.com/s-0-a-d/ChatSkibidi/refs/heads/main/Ảnh/IMG_20250306_151454.jpg";
 
-const translations: Record<Language, any> = {
-  en: { title: "Mồn Lèo AI", subtitle: "AI Assistant by Thanh", newChat: "New Chat", history: "Chat History", settings: "Settings", apiKey: "API Key", lang: "Language", search: "Google Search", reset: "Reset Data", cancel: "Cancel", save: "Save", welcome: "Hello! Mồn Lèo AI is ready.", typing: "Thinking...", errorQuota: "Quota exceeded.", placeholder: "Ask anything...", footerNote: "AI may be inaccurate.", modeLabel: "Mode" },
-  vi: { title: "Mồn Lèo AI", subtitle: "Trợ lý AI của Thanh", newChat: "Chat mới", history: "Lịch sử", settings: "Cài đặt", apiKey: "API Key", lang: "Ngôn ngữ", search: "Tìm kiếm", reset: "Xóa dữ liệu", cancel: "Hủy", save: "Lưu & Gửi", welcome: "Chào bạn! Mồn Lèo AI đã sẵn sàng.", typing: "Đang nghĩ...", errorQuota: "Hết hạn mức.", placeholder: "Hỏi Mồn Lèo AI...", footerNote: "AI có thể không chính xác.", modeLabel: "Chế độ" },
-  fr: { title: "Mồn Lèo AI", subtitle: "Assistant par Thanh", newChat: "Nouveau Chat", history: "Historique", settings: "Paramètres", apiKey: "Clé API", lang: "Langue", search: "Recherche", reset: "Réinitialiser", cancel: "Annuler", save: "Enregistrer", welcome: "Bonjour !", typing: "Réflexion...", errorQuota: "Quota épuisé.", placeholder: "Posez une question...", footerNote: "L'IA peut être inexacte.", modeLabel: "Mode" },
-  ja: { title: "Mồn Lèo AI", subtitle: "ThanhのAI", newChat: "新規チャット", history: "履歴", settings: "設定", apiKey: "APIキー", lang: "言語", search: "検索", reset: "リセット", cancel: "キャンセル", save: "保存", welcome: "こんにちは！", typing: "考え中...", errorQuota: "クォータ制限。", placeholder: "何か聞いてください...", footerNote: "不正確な場合があります。", modeLabel: "モード" },
-  ko: { title: "Mồn Lèo AI", subtitle: "Thanh의 AI", newChat: "새 채팅", history: "기록", settings: "설정", apiKey: "API 키", lang: "언어", search: "검색", reset: "초기화", cancel: "취소", save: "저장", welcome: "안녕하세요!", typing: "생각 중...", errorQuota: "할당량 초과.", placeholder: "무엇이든 물어보세요...", footerNote: "부정확할 수 있습니다.", modeLabel: "모드" },
-  zh: { title: "Mồn Lèo AI", subtitle: "Thanh 的 AI", newChat: "新对话", history: "历史", settings: "设置", apiKey: "API 密钥", lang: "语言", search: "搜索", reset: "重置", cancel: "取消", save: "保存", welcome: "你好！", typing: "思考中...", errorQuota: "配额已满。", placeholder: "向我提问...", footerNote: "可能不准确。", modeLabel: "模式" },
-  es: { title: "Mồn Lèo AI", subtitle: "Asistente de Thanh", newChat: "Nuevo Chat", history: "Historial", settings: "Ajustes", apiKey: "Clave API", lang: "Idioma", search: "Buscar", reset: "Reiniciar", cancel: "Cancelar", save: "Guardar", welcome: "¡Hola!", typing: "Pensando...", errorQuota: "Cuota excedida.", placeholder: "Pregunta algo...", footerNote: "La IA puede errar.", modeLabel: "Modo" },
-  de: { title: "Mồn Lèo AI", subtitle: "Assistent von Thanh", newChat: "Neuer Chat", history: "Verlauf", settings: "Setup", apiKey: "API-Key", lang: "Sprache", search: "Suche", reset: "Löschen", cancel: "Abbrechen", save: "Speichern", welcome: "Hallo!", typing: "Überlegt...", errorQuota: "Limit erreicht.", placeholder: "Frage etwas...", footerNote: "KI kann irren.", modeLabel: "Modus" },
-  it: { title: "Mồn Lèo AI", subtitle: "Assistente di Thanh", newChat: "Nuova Chat", history: "Cronologia", settings: "Impostazioni", apiKey: "Chiave API", lang: "Langue", search: "Cerca", reset: "Reset", cancel: "Annulla", save: "Salva", welcome: "Ciao!", typing: "Pensando...", errorQuota: "Quota superata.", placeholder: "Chiedi qualcosa...", footerNote: "L'IA può sbagliare.", modeLabel: "Modalità" },
-  pt: { title: "Mồn Lèo AI", subtitle: "Assistente do Thanh", newChat: "Novo Chat", history: "Histórico", settings: "Ajustes", apiKey: "Chave API", lang: "Idioma", search: "Pesquisa", reset: "Resetar", cancel: "Cancelar", save: "Salvar", welcome: "Olá!", typing: "Pensando...", errorQuota: "Cota excedida.", placeholder: "Pergunte algo...", footerNote: "IA pode falhar.", modeLabel: "Modo" },
-  ru: { title: "Mồn Lèo AI", subtitle: "Ассистент Thanh", newChat: "Новый чат", history: "История", settings: "Настройки", apiKey: "Ключ API", lang: "Язык", search: "Поиск", reset: "Сброс", cancel: "Отмена", save: "Ок", welcome: "Привет!", typing: "Думаю...", errorQuota: "Лимит исчерпан.", placeholder: "Спросите о чем угодно...", footerNote: "ИИ может ошибаться.", modeLabel: "Режим" },
-  ar: { title: "Mồn Lèo AI", subtitle: "مساعد Thanh", newChat: "دردشة جديدة", history: "السجل", settings: "الإعدادات", apiKey: "مفتاح API", lang: "اللغة", search: "بحث", reset: "إعادة تعيين", cancel: "إلغاء", save: "حفظ", welcome: "أهلاً بك!", typing: "يفكر...", errorQuota: "تجاوز الحصة.", placeholder: "اسأل أي شيء...", footerNote: "قد يكون الذكاء الاصطناعي غير دقيق.", modeLabel: "الوضع" },
-  th: { title: "Mồn Lèo AI", subtitle: "ผู้ช่วย của Thanh", newChat: "แชทใหม่", history: "ประวัติ", settings: "ตั้งค่า", apiKey: "รหัส API", lang: "ภาษา", search: "ค้นหา", reset: "รีเซ็ต", cancel: "ยกเลิก", save: "บันทึก", welcome: "สวัสดี!", typing: "กำลังคิด...", errorQuota: "โควตาเต็ม", placeholder: "ถามอะไรก็ได้...", footerNote: "AI อาจให้ข้อมูลผิด", modeLabel: "โหมด" },
-  id: { title: "Mồn Lèo AI", subtitle: "Asisten Thanh", newChat: "Chat Baru", history: "Riwayat", settings: "Setelan", apiKey: "Kunci API", lang: "Bahasa", search: "Cari", reset: "Reset", cancel: "Batal", save: "Simpan", welcome: "Halo!", typing: "Berpikir...", errorQuota: "Kuota habis.", placeholder: "Tanya apa saja...", footerNote: "AI mungkin không akurat.", modeLabel: "Mode" },
-  hi: { title: "Mồn Lèo AI", subtitle: "Thanh के सहायक", newChat: "नया चैट", history: "इतिहास", settings: "सेटिंग्स", apiKey: "API कुंजी", lang: "भाषा", search: "खoz", reset: "रीसेट", cancel: "रद्द करें", save: "सहेजें", welcome: "नमस्ते!", typing: "सोच रहा है...", errorQuota: "कोटा समाप्त।", placeholder: "कुछ भी पूछें...", footerNote: "AI गलत हो सकता है।", modeLabel: "मोड" },
-  tr: { title: "Mồn Lèo AI", subtitle: "Thanh Asistanı", newChat: "Yeni Sohbet", history: "Geçmiş", settings: "Ayarlar", apiKey: "API Anahtarı", lang: "Dil", search: "Arama", reset: "Sıfırla", cancel: "İptal", save: "Kaydet", welcome: "Merhaba!", typing: "Düşünüyor...", errorQuota: "Kota aşıldı.", placeholder: "Bir şey sor...", footerNote: "Yapay zeka hatalı olabilir.", modeLabel: "Mod" },
-  nl: { title: "Mồn Lèo AI", subtitle: "Assistent van Thanh", newChat: "Nieuwe Chat", history: "Geschiedenis", settings: "Instellingen", apiKey: "API-sleutel", lang: "Taal", search: "Zoeken", reset: "Reset", cancel: "Annuleer", save: "Opslaan", welcome: "Hallo!", typing: "Denkt na...", errorQuota: "Quotun op.", placeholder: "Vraag iets...", footerNote: "AI kan onnauwkeurig zijn.", modeLabel: "Modus" }
+const translations: Partial<Record<Language, any>> = {
+  en: { 
+    title: "Mồn Lèo AI", 
+    subtitle: "AI Assistant by Thanh", 
+    newChat: "New Chat", 
+    history: "Chat History", 
+    settings: "Settings", 
+    apiKey: "API Key", 
+    lang: "Language", 
+    search: "Google Search", 
+    reset: "Reset Data", 
+    cancel: "Cancel", 
+    save: "Save", 
+    welcome: "Hello! Mồn Lèo AI is ready.", 
+    typing: "Thinking...", 
+    errorQuota: "Quota exceeded.", 
+    placeholder: "Ask anything...", 
+    footerNote: "AI may be inaccurate.", 
+    confirmReset: "Are you sure you want to clear all data?"
+  },
+  vi: { 
+    title: "Mồn Lèo AI", 
+    subtitle: "Trợ lý AI của Thanh", 
+    newChat: "Chat mới", 
+    history: "Lịch sử", 
+    settings: "Cài đặt", 
+    apiKey: "API Key", 
+    lang: "Ngôn ngữ", 
+    search: "Tìm kiếm", 
+    reset: "Xóa dữ liệu", 
+    cancel: "Hủy", 
+    save: "Lưu & Gửi", 
+    welcome: "Chào bạn! Mồn Lèo AI đã sẵn sàng.", 
+    typing: "Đang nghĩ...", 
+    errorQuota: "Hết hạn mức.", 
+    placeholder: "Hỏi Mồn Lèo AI...", 
+    footerNote: "AI có thể không chính xác.", 
+    confirmReset: "Bạn có chắc chắn muốn xóa toàn bộ dữ liệu?"
+  }
 };
 
 const App: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem(STORAGE_SETTINGS);
-    return saved ? JSON.parse(saved) : { apiKey: SYSTEM_API_KEY, language: 'en', useSearch: false, currentMode: 'standard' };
+    return saved ? JSON.parse(saved) : { apiKey: SYSTEM_API_KEY, language: 'vi', useSearch: false, currentMode: 'standard' };
   });
 
   const [threads, setThreads] = useState<ChatThread[]>(() => {
@@ -77,14 +98,12 @@ const App: React.FC = () => {
     return () => clearTimeout(timer);
   }, [messages.length, isTyping, scrollToBottom]);
 
-  useEffect(() => {
-    scrollToBottom(true);
-  }, [currentThreadId, scrollToBottom]);
-
   const triggerAiResponse = async (activeId: string, text: string, attachment?: Attachment, historyOverride?: Message[]) => {
     const thread = threads.find(t => t.id === activeId);
-    const modeToUse = thread?.mode || settings.currentMode;
-    const history = historyOverride || thread?.messages.slice(0, -1) || [];
+    if (!thread) return;
+    
+    const modeToUse = thread.mode || settings.currentMode;
+    const history = historyOverride || thread.messages.slice(0, -1);
 
     setIsTyping(true);
     setError(null);
@@ -123,25 +142,21 @@ const App: React.FC = () => {
   const handleEditMessage = async (msgId: string, newText: string) => {
     if (!currentThreadId) return;
     const thread = threads.find(t => t.id === currentThreadId);
-    if (!thread) return;
-
-    const msgIndex = thread.messages.findIndex(m => m.id === msgId);
-    if (msgIndex === -1) return;
+    const msgIndex = thread?.messages.findIndex(m => m.id === msgId) ?? -1;
+    if (msgIndex === -1 || !thread) return;
 
     const editedMsg = { ...thread.messages[msgIndex], text: newText };
     const updatedHistory = [...thread.messages.slice(0, msgIndex), editedMsg];
     
     setThreads(prev => prev.map(t => t.id === currentThreadId ? { ...t, messages: updatedHistory, lastUpdated: new Date() } : t));
-
-    const historyForAi = updatedHistory.slice(0, -1);
-    await triggerAiResponse(currentThreadId, newText, editedMsg.attachment, historyForAi);
+    await triggerAiResponse(currentThreadId, newText, editedMsg.attachment, updatedHistory.slice(0, -1));
   };
 
   const createNewThread = (mode: AppMode = settings.currentMode) => {
     const newId = Date.now().toString();
     const newThread: ChatThread = {
       id: newId,
-      title: mode === 'odh_plugin' ? "Plugin " + new Date().toLocaleTimeString() : ui.newChat,
+      title: mode === 'odh_plugin' ? "ODH Plugin Chat" : ui.newChat,
       messages: [],
       lastUpdated: new Date(),
       mode: mode
@@ -151,24 +166,12 @@ const App: React.FC = () => {
     setIsSidebarOpen(false);
   };
 
-  const toggleMode = () => {
-    const nextMode = settings.currentMode === 'standard' ? 'odh_plugin' : 'standard';
-    setSettings({...settings, currentMode: nextMode});
-    createNewThread(nextMode);
-  };
-
   const handleSendMessage = async (text: string, attachment?: Attachment) => {
     let activeId = currentThreadId;
-    const modeToUse = currentThread?.mode || settings.currentMode;
-
     if (!activeId) {
       const newId = Date.now().toString();
       const newThread: ChatThread = { 
-        id: newId, 
-        title: text.slice(0, 30) || 'New Chat', 
-        messages: [], 
-        lastUpdated: new Date(),
-        mode: modeToUse
+        id: newId, title: text.slice(0, 30) || 'New Chat', messages: [], lastUpdated: new Date(), mode: settings.currentMode 
       };
       setThreads(prev => [newThread, ...prev]);
       activeId = newId;
@@ -177,12 +180,11 @@ const App: React.FC = () => {
 
     const userMsg: Message = { id: Date.now().toString(), role: Role.USER, text, timestamp: new Date(), attachment };
     setThreads(prev => prev.map(t => t.id === activeId ? { ...t, messages: [...t.messages, userMsg], lastUpdated: new Date() } : t));
-    
     await triggerAiResponse(activeId, text, attachment);
   };
 
   const handleReset = () => {
-    if (window.confirm(ui.confirmReset || "Clear data?")) {
+    if (window.confirm(ui.confirmReset)) {
       localStorage.clear();
       window.location.reload();
     }
@@ -214,17 +216,10 @@ const App: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
-             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full cursor-pointer transition-all ${settings.currentMode === 'odh_plugin' ? 'bg-orange-50 border border-orange-100' : 'bg-gray-100'}`} onClick={toggleMode}>
-                <i className={`fa-solid fa-robot text-[10px] ${settings.currentMode === 'odh_plugin' ? 'text-orange-500' : 'text-gray-400'}`}></i>
-                <span className={`hidden sm:inline text-[9px] font-black uppercase tracking-tighter ${settings.currentMode === 'odh_plugin' ? 'text-orange-600' : 'text-gray-500'}`}>{settings.currentMode === 'odh_plugin' ? 'ODH' : 'NORMAL'}</span>
-             </div>
-
-             <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full cursor-pointer hover:bg-gray-200 transition-colors" onClick={() => setSettings({...settings, useSearch: !settings.useSearch})}>
-                <i className={`fa-solid fa-globe text-[10px] ${settings.useSearch ? 'text-blue-500' : 'text-gray-400'}`}></i>
-                <div className={`w-6 h-3.5 rounded-full p-0.5 transition-colors ${settings.useSearch ? 'bg-blue-500' : 'bg-gray-300'}`}>
-                  <div className={`w-2.5 h-2.5 bg-white rounded-full transition-transform ${settings.useSearch ? 'translate-x-2.5' : 'translate-x-0'}`}></div>
-                </div>
-             </div>
+             <button onClick={() => setSettings({...settings, useSearch: !settings.useSearch})} className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors ${settings.useSearch ? 'bg-blue-50 text-blue-600 border border-blue-100' : 'bg-gray-100 text-gray-500'}`}>
+                <i className={`fa-solid fa-globe text-[10px]`}></i>
+                <span className="hidden sm:inline text-[9px] font-bold uppercase tracking-widest">{ui.search}</span>
+             </button>
              <button onClick={() => setIsSettingsOpen(true)} className="p-2 text-gray-400 hover:text-indigo-600 transition-colors"><i className="fa-solid fa-gear"></i></button>
           </div>
         </header>
@@ -232,11 +227,14 @@ const App: React.FC = () => {
         <main className="flex-1 overflow-y-auto custom-scrollbar bg-[#fafafa] flex flex-col">
           {!currentThreadId ? (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center max-w-sm mx-auto">
-              <div className={`w-24 h-24 rounded-[2.5rem] overflow-hidden mb-8 shadow-2xl transition-all ring-4 ring-white ${settings.currentMode === 'odh_plugin' ? 'rotate-12 shadow-orange-100' : 'rotate-3 shadow-indigo-100'}`}>
+              <div className="w-24 h-24 rounded-[2.5rem] overflow-hidden mb-8 shadow-2xl rotate-3 ring-4 ring-white transition-transform hover:rotate-12 hover:scale-105 duration-300">
                 <img src={CAT_AVATAR_URL} alt="Mồn Lèo" className="w-full h-full object-cover" />
               </div>
-              <h3 className="text-2xl font-black text-gray-900 mb-2">{settings.currentMode === 'odh_plugin' ? 'ODH Plugin Maker' : ui.title}</h3>
-              <p className="text-sm text-gray-500">{settings.currentMode === 'odh_plugin' ? 'Roblox script generation expert.' : ui.subtitle}</p>
+              <h3 className="text-2xl font-black text-gray-900 mb-2">{ui.title}</h3>
+              <p className="text-sm text-gray-500">{ui.subtitle}</p>
+              <button onClick={() => createNewThread()} className="mt-8 px-8 py-3 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all">
+                {ui.newChat}
+              </button>
             </div>
           ) : (
             <div className="max-w-4xl w-full mx-auto p-4 md:p-10 pb-40 flex-1 flex flex-col">
@@ -248,7 +246,7 @@ const App: React.FC = () => {
                 />
               ))}
               {isTyping && (
-                <div className="flex justify-start mb-6">
+                <div className="flex justify-start mb-6 animate-fade-in">
                   <div className="bg-white px-4 py-3 rounded-2xl border border-gray-100 shadow-sm flex gap-3 items-center text-[10px] font-bold text-indigo-400 animate-pulse">
                     <div className="w-5 h-5 rounded-full overflow-hidden shrink-0">
                       <img src={CAT_AVATAR_URL} alt="Thinking" className="w-full h-full object-cover" />
@@ -270,7 +268,7 @@ const App: React.FC = () => {
         
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#fafafa] via-[#fafafa] to-transparent pt-10 pointer-events-none">
           <div className="pointer-events-auto">
-            <ChatInput onSendMessage={handleSendMessage} disabled={isTyping} placeholder={currentThread?.mode === 'odh_plugin' ? "Describe features..." : ui.placeholder} footerNote={ui.footerNote} />
+            <ChatInput onSendMessage={handleSendMessage} disabled={isTyping} placeholder={currentThread?.mode === 'odh_plugin' ? "Mô tả tính năng cho Plugin..." : ui.placeholder} footerNote={ui.footerNote} />
           </div>
         </div>
       </div>
@@ -278,32 +276,20 @@ const App: React.FC = () => {
       {isSettingsOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-10 shadow-2xl animate-fade-in">
-            <h3 className="text-2xl font-black text-gray-900 mb-6">{ui.settings}</h3>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-black text-gray-900">{ui.settings}</h3>
+              <button onClick={() => setIsSettingsOpen(false)} className="text-gray-400 hover:text-gray-600"><i className="fa-solid fa-xmark text-xl"></i></button>
+            </div>
             <div className="space-y-6">
               <div>
                 <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 ml-1">{ui.apiKey}</label>
-                <input type="text" value={settings.apiKey} onChange={(e) => setSettings({...settings, apiKey: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-3 px-5 focus:ring-4 focus:ring-indigo-500/10 outline-none font-mono text-xs transition-all" />
+                <input type="password" value={settings.apiKey} onChange={(e) => setSettings({...settings, apiKey: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-3 px-5 focus:ring-4 focus:ring-indigo-500/10 outline-none font-mono text-xs transition-all" />
               </div>
               <div>
                 <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 ml-1">{ui.lang}</label>
-                <select value={settings.language} onChange={(e) => setSettings({...settings, language: e.target.value as Language})} className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-3 px-5 outline-none text-xs font-bold appearance-none cursor-pointer overflow-y-auto">
-                  <option value="en">ENGLISH</option>
+                <select value={settings.language} onChange={(e) => setSettings({...settings, language: e.target.value as Language})} className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-3 px-5 outline-none text-xs font-bold appearance-none cursor-pointer">
                   <option value="vi">TIẾNG VIỆT</option>
-                  <option value="es">ESPAÑOL</option>
-                  <option value="de">DEUTSCH</option>
-                  <option value="fr">FRANÇAIS</option>
-                  <option value="it">ITALIANO</option>
-                  <option value="pt">PORTUGUÊS</option>
-                  <option value="ru">РУССКИЙ</option>
-                  <option value="ja">日本語</option>
-                  <option value="ko">한국어</option>
-                  <option value="zh">中文</option>
-                  <option value="ar">العربية</option>
-                  <option value="th">ไทย</option>
-                  <option value="id">BAHASA INDONESIA</option>
-                  <option value="hi">हिन्दी</option>
-                  <option value="tr">TÜRKÇE</option>
-                  <option value="nl">NEDERLANDS</option>
+                  <option value="en">ENGLISH</option>
                 </select>
               </div>
               <div className="pt-4 flex flex-col gap-3">

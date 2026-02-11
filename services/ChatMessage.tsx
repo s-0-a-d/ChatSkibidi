@@ -8,7 +8,7 @@ interface ChatMessageProps {
   onEdit?: (newText: string) => void;
 }
 
-const CAT_AVATAR_URL = "https://i.pinimg.com/originals/03/91/9c/03919c0724806a6669919f9760773f32.jpg";
+const CAT_AVATAR_URL = "https://raw.githubusercontent.com/s-0-a-d/ChatSkibidi/refs/heads/main/Ảnh/IMG_20250306_151454.jpg";
 
 const PreComponent = ({ children, ...props }: any) => {
   const [copied, setCopied] = useState(false);
