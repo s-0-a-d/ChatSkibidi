@@ -35,7 +35,8 @@ const getSystemInstruction = (lang: Language, mode: AppMode) => {
     1. Always provide complete, ready-to-use Lua code blocks.
     2. Use the exact API methods from the documentation.
     3. If the user asks for a feature like "Aimbot" or "ESP", implement the UI components using this framework.
-    4. Respond in ${lang === 'vi' ? 'Vietnamese' : 'English'} but keep code comments relevant.`;
+    4. Respond in ${lang === 'vi' ? 'Vietnamese' : 'English'} but keep code comments relevant.
+    5. Keep explanations brief, focus 90% on the code block.`;
   } else {
     basePrompt = `You are Mồn Lèo AI, a super intelligent AI assistant developed by 'Thanh'. Today is: ${dateStr}.
     Respond naturally in ${lang}. Your name is always 'Mồn Lèo AI'. You can see images and read PDF documents.`;
@@ -55,6 +56,8 @@ export async function* sendMessageStream(
 ) {
   try {
     const ai = new GoogleGenAI({ apiKey });
+    // Dùng Flash cho cả 2 chế độ để đảm bảo quota cao và tốc độ phản hồi nhanh
+    const modelName = 'gemini-3-flash-preview';
     const tools = useSearch && mode === 'standard' ? [{ googleSearch: {} }] : undefined;
 
     const contents = history.map(m => ({
@@ -73,11 +76,11 @@ export async function* sendMessageStream(
     contents.push({ role: Role.USER, parts: currentParts });
 
     const result = await ai.models.generateContentStream({
-      model: mode === 'odh_plugin' ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview',
+      model: modelName,
       contents: contents,
       config: {
         systemInstruction: getSystemInstruction(lang, mode),
-        temperature: mode === 'odh_plugin' ? 0.4 : 0.7, // Lower temperature for better code generation
+        temperature: mode === 'odh_plugin' ? 0.3 : 0.7, // Nhiệt độ thấp hơn giúp code chính xác hơn
         tools: tools
       }
     });
@@ -88,7 +91,9 @@ export async function* sendMessageStream(
     }
   } catch (error: any) {
     const errorBody = error.message || "";
-    if (errorBody.includes("429") || errorBody.includes("RESOURCE_EXHAUSTED")) throw new Error("QUOTA_EXHAUSTED");
+    if (errorBody.includes("429") || errorBody.includes("RESOURCE_EXHAUSTED")) {
+      throw new Error("QUOTA_EXHAUSTED");
+    }
     throw new Error(errorBody || "Unknown error");
   }
 }
