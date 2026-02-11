@@ -8,7 +8,7 @@ interface ChatMessageProps {
   onEdit?: (newText: string) => void;
 }
 
-const CAT_AVATAR_URL = "https://raw.githubusercontent.com/s-0-a-d/ChatSkibidi/refs/heads/main/%E1%BA%A2nh/IMG_20250306_151454.jpg";
+const CAT_AVATAR_URL = "https://raw.githubusercontent.com/s-0-a-d/Image/refs/heads/main/IMG_20250306_151454.jpg";
 
 const PreComponent = ({ children, ...props }: any) => {
   const [copied, setCopied] = useState(false);
@@ -75,9 +75,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onEdit }) => {
   const isImage = message.attachment?.mimeType.startsWith('image/');
 
   return (
-    <div className={`flex w-full mb-6 animate-fade-in group/msg-row ${isUser ? 'justify-end' : 'justify-start'}`}>
-      <div className={`flex max-w-[95%] md:max-w-[85%] ${isUser ? 'flex-row-reverse' : 'flex-row'} items-start min-w-0`}>
-        <div className={`flex-shrink-0 h-8 w-8 md:h-10 md:w-10 rounded-xl overflow-hidden shadow-sm ${isUser ? 'ml-2 md:ml-3 bg-indigo-600 flex items-center justify-center text-white text-xs' : 'mr-2 md:mr-3 ring-2 ring-gray-100'}`}>
+    <div className={`flex w-full mb-8 animate-fade-in group/msg-row ${isUser ? 'justify-end' : 'justify-start'}`}>
+      <div className={`flex max-w-[95%] md:max-w-[90%] ${isUser ? 'flex-row-reverse' : 'flex-row'} items-start min-w-0`}>
+        <div className={`flex-shrink-0 h-10 w-10 md:h-12 md:w-12 rounded-2xl overflow-hidden shadow-sm ${isUser ? 'ml-3 md:ml-4 bg-indigo-600 flex items-center justify-center text-white text-base shadow-indigo-100' : 'mr-3 md:mr-4 ring-4 ring-gray-50'}`}>
           {isUser ? (
             <i className="fa-solid fa-user"></i>
           ) : (
@@ -86,20 +86,20 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onEdit }) => {
         </div>
         
         <div className={`flex flex-col min-w-0 ${isUser ? 'items-end' : 'items-start'} overflow-visible`}>
-          <div className={`relative px-3 md:px-4 py-2.5 md:py-3 rounded-2xl shadow-sm overflow-visible ${
+          <div className={`relative px-4 md:px-6 py-3 md:py-4 rounded-[2rem] shadow-sm overflow-visible ${
             isUser 
               ? 'message-bubble-user rounded-tr-none border border-gray-100' 
               : 'message-bubble-ai rounded-tl-none border border-gray-100 bg-white'
           }`}>
             
             {message.attachment && !isEditing && (
-              <div className="mb-2 md:mb-3">
+              <div className="mb-4">
                 {isImage ? (
-                  <img src={message.attachment.url} alt="Attached" className="max-w-full rounded-xl border border-gray-200" />
+                  <img src={message.attachment.url} alt="Attached" className="max-w-full rounded-2xl border border-gray-100 shadow-sm" />
                 ) : (
-                  <div className="flex items-center gap-2 p-2 bg-white/50 border border-gray-200 rounded-xl">
-                    <i className="fa-solid fa-file-pdf text-red-500 text-lg"></i>
-                    <span className="text-[9px] font-bold text-gray-700 truncate">{message.attachment.name}</span>
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-2xl">
+                    <i className="fa-solid fa-file-pdf text-red-500 text-2xl"></i>
+                    <span className="text-[10px] font-black text-gray-700 truncate uppercase tracking-widest">{message.attachment.name}</span>
                   </div>
                 )}
               </div>
@@ -107,14 +107,14 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onEdit }) => {
 
             <div className={`prose max-w-full overflow-hidden`}>
               {isEditing ? (
-                <div className="flex flex-col gap-2 min-w-[200px]">
+                <div className="flex flex-col gap-3 min-w-[250px]">
                   <textarea
                     ref={editRef}
                     value={editText}
                     onChange={(e) => setEditText(e.target.value)}
-                    className="w-full bg-white border border-indigo-200 rounded-xl p-2 outline-none text-sm font-medium resize-none overflow-hidden shadow-inner focus:ring-2 focus:ring-indigo-500/20"
+                    className="w-full bg-white border-2 border-indigo-100 rounded-2xl p-3 outline-none text-sm font-medium resize-none overflow-hidden shadow-inner focus:border-indigo-500 transition-all"
                   />
-                  <div className="flex justify-end gap-4 items-center mt-1">
+                  <div className="flex justify-end gap-4 items-center">
                     <button 
                       onClick={() => { setIsEditing(false); setEditText(message.text); }} 
                       className="text-[10px] font-black uppercase text-gray-400 hover:text-red-500 transition-colors"
@@ -123,7 +123,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onEdit }) => {
                     </button>
                     <button 
                       onClick={handleSave} 
-                      className="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
+                      className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
                     >
                       Lưu & Gửi
                     </button>
@@ -137,20 +137,20 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onEdit }) => {
             </div>
 
             {!isEditing && (
-              <div className={`absolute bottom-0 ${isUser ? 'right-full mr-2' : 'left-full ml-2'} opacity-0 group-hover/msg-row:opacity-100 transition-opacity flex items-center gap-2`}>
+              <div className={`absolute bottom-2 ${isUser ? 'right-full mr-3' : 'left-full ml-3'} opacity-0 group-hover/msg-row:opacity-100 transition-all flex items-center gap-2`}>
                 {!isUser ? (
-                  <button onClick={handleCopyAll} title="Copy" className="w-7 h-7 bg-white border border-gray-100 rounded-full flex items-center justify-center text-gray-400 hover:text-indigo-600 shadow-sm transition-all hover:scale-110">
+                  <button onClick={handleCopyAll} title="Copy" className="w-8 h-8 bg-white border border-gray-100 rounded-full flex items-center justify-center text-gray-400 hover:text-indigo-600 shadow-md transition-all hover:scale-110 active:scale-90">
                     <i className="fa-solid fa-copy text-[10px]"></i>
                   </button>
                 ) : (
-                  <button onClick={() => setIsEditing(true)} title="Edit" className="w-7 h-7 bg-white border border-gray-100 rounded-full flex items-center justify-center text-gray-400 hover:text-indigo-600 shadow-sm transition-all hover:scale-110">
+                  <button onClick={() => setIsEditing(true)} title="Sửa tin nhắn" className="w-8 h-8 bg-white border border-gray-100 rounded-full flex items-center justify-center text-gray-400 hover:text-indigo-600 shadow-md transition-all hover:scale-110 active:scale-90">
                     <i className="fa-solid fa-pen text-[10px]"></i>
                   </button>
                 )}
               </div>
             )}
           </div>
-          <span className={`text-[8px] mt-1 text-gray-400 font-bold uppercase tracking-wider px-1`}>
+          <span className={`text-[9px] mt-2 text-gray-400 font-black uppercase tracking-[0.2em] px-2 opacity-50`}>
             {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>
         </div>
