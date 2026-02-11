@@ -2,63 +2,46 @@
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { Role, Language, Message, Attachment, AppMode } from "../types.ts";
 
-const ODH_DOCUMENTATION = `
-Framework: odh_shared_plugins (Roblox Plugin System)
-API Reference:
-1. Initialize: local shared = odh_shared_plugins
-2. Create Section: local my_own_section = shared.AddSection(name: string)
-3. Labels: section:AddLabel(text: string)
-4. Paragraphs: section:AddParagraph(title: string, desc: string)
-5. Toggles: section:AddToggle(name: string, callback: function(bool))
-6. Sliders: section:AddSlider(name: string, min: int, max: int, default: int, callback: function(int))
-7. Dropdowns: local d = section:AddDropdown(name: string, list: table, callback: function(selected))
-   - d.Select(val), d.Change(new_list)
-8. PlayerDropdown: section:AddPlayerDropdown(name: string, callback: function(player))
-9. Textbox: section:AddTextBox(name: string, callback: function(text))
-10. Buttons: section:AddButton(name: string, callback: function())
-11. Keybinds: section:AddKeybind(name: string, defaultKey: string, callback: function())
-12. Notifications: shared.Notify(msg, type) -> 1:SUCCESS, 2:ERROR, 3:WARN, 4:INFO
-13. Identifiers: shared.is_premium_user, shared.discord_name, shared.game_name (e.g. "Murder Mystery 2")
+const ODH_DOCS = `
+ODH (Open Discord Hub) Framework Documentation:
+- Root: shared.ODH
+- UI: shared.ODH.UI (Library for creating Roblox UI)
+- Classes: UI.new("Frame", properties), UI.new("TextLabel", properties)
+- Features: Draggable, Resizable, Themeable.
+- Example: 
+  local Window = shared.ODH.UI.new("Window", {Title = "My Plugin", Size = UDim2.new(0, 300, 0, 200)})
+  shared.ODH.Plugins:Register(Window)
 `;
 
 const getSystemInstruction = (lang: Language, mode: AppMode) => {
   const now = new Date();
   const dateStr = now.toLocaleDateString(lang, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   
-  let basePrompt = "";
+  let base = `You are Mồn Lèo AI, a super intelligent and friendly AI assistant developed by 'Thanh'. 
+  Today is: ${dateStr}. Respond naturally in ${lang === 'vi' ? 'Vietnamese' : 'English'}. 
+  Your name is 'Mồn Lèo AI'.`;
+
   if (mode === 'odh_plugin') {
-    basePrompt = `You are ODH Plugin Maker AI. Your absolute priority is generating Lua scripts for Roblox executors using the odh_shared_plugins framework.
-    DOCUMENTATION:
-    ${ODH_DOCUMENTATION}
-    
-    Rules for ODH Mode:
-    1. Always provide complete, ready-to-use Lua code blocks.
-    2. Use the exact API methods from the documentation.
-    3. If the user asks for a feature like "Aimbot" or "ESP", implement the UI components using this framework.
-    4. Respond in ${lang === 'vi' ? 'Vietnamese' : 'English'} but keep code comments relevant.
-    5. Keep explanations brief, focus 90% on the code block.`;
-  } else {
-    basePrompt = `You are Mồn Lèo AI, a super intelligent AI assistant developed by 'Thanh'. Today is: ${dateStr}.
-    Respond naturally in ${lang}. Your name is always 'Mồn Lèo AI'. You can see images and read PDF documents.`;
+    base += `\n\nSPECIAL MODE: ODH PLUGIN MAKER.
+    You specialize in writing Roblox Lua scripts using the ODH Framework.
+    ${ODH_DOCS}
+    Always provide code that is compatible with ODH structure. Provide complete, working scripts.`;
   }
 
-  return basePrompt;
+  return base;
 };
 
 export async function* sendMessageStream(
-  apiKey: string, 
+  apiKey: string,
   lang: Language, 
   history: Message[], 
   currentText: string, 
   attachment?: Attachment,
-  useSearch: boolean = false,
   mode: AppMode = 'standard'
 ) {
   try {
-    const ai = new GoogleGenAI({ apiKey });
-    // Dùng Flash cho cả 2 chế độ để đảm bảo quota cao và tốc độ phản hồi nhanh
+    const ai = new GoogleGenAI({ apiKey: apiKey || process.env.API_KEY || '' });
     const modelName = 'gemini-3-flash-preview';
-    const tools = useSearch && mode === 'standard' ? [{ googleSearch: {} }] : undefined;
 
     const contents = history.map(m => ({
       role: m.role,
@@ -80,8 +63,7 @@ export async function* sendMessageStream(
       contents: contents,
       config: {
         systemInstruction: getSystemInstruction(lang, mode),
-        temperature: mode === 'odh_plugin' ? 0.3 : 0.7, // Nhiệt độ thấp hơn giúp code chính xác hơn
-        tools: tools
+        temperature: 0.7
       }
     });
 

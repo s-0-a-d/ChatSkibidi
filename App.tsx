@@ -7,30 +7,27 @@ import ChatInput from './components/ChatInput.tsx';
 import Sidebar from './components/Sidebar.tsx';
 
 const SYSTEM_API_KEY = 'AIzaSyDrOJD6P_8TZ7CKMWpIx2cECGOeG4UheD8';
-const STORAGE_THREADS = 'mon_leo_threads_v7';
-const STORAGE_SETTINGS = 'mon_leo_settings_v7';
-// Cập nhật đường dẫn đã mã hóa URL để tránh lỗi đồng bộ GitHub
+const STORAGE_THREADS = 'mon_leo_pro_final_v1';
+const STORAGE_SETTINGS = 'mon_leo_pro_settings_final_v1';
 const CAT_AVATAR_URL = "https://raw.githubusercontent.com/s-0-a-d/ChatSkibidi/refs/heads/main/%E1%BA%A2nh/IMG_20250306_151454.jpg";
 
-const translations: Partial<Record<Language, any>> = {
+const translations: Record<Language, any> = {
   en: { 
     title: "Mồn Lèo AI", 
     subtitle: "AI Assistant by Thanh", 
     newChat: "New Chat", 
-    history: "Chat History", 
+    history: "History", 
     settings: "Settings", 
-    apiKey: "API Key", 
+    apiKey: "Gemini API Key",
     lang: "Language", 
-    search: "Google Search", 
-    reset: "Reset Data", 
-    cancel: "Cancel", 
+    modeLabel: "ODH Maker",
+    reset: "Clear Data", 
     save: "Save", 
-    welcome: "Hello! Mồn Lèo AI is ready.", 
     typing: "Thinking...", 
     errorQuota: "Quota exceeded.", 
-    placeholder: "Ask anything...", 
+    placeholder: "Ask Mồn Lèo anything...", 
     footerNote: "AI may be inaccurate.", 
-    confirmReset: "Are you sure you want to clear all data?"
+    confirmReset: "Delete all history?"
   },
   vi: { 
     title: "Mồn Lèo AI", 
@@ -38,25 +35,23 @@ const translations: Partial<Record<Language, any>> = {
     newChat: "Chat mới", 
     history: "Lịch sử", 
     settings: "Cài đặt", 
-    apiKey: "API Key", 
+    apiKey: "Mã API Gemini",
     lang: "Ngôn ngữ", 
-    search: "Tìm kiếm", 
+    modeLabel: "ODH Maker",
     reset: "Xóa dữ liệu", 
-    cancel: "Hủy", 
-    save: "Lưu & Gửi", 
-    welcome: "Chào bạn! Mồn Lèo AI đã sẵn sàng.", 
-    typing: "Đang nghĩ...", 
+    save: "Lưu lại", 
+    typing: "Mồn Lèo đang nghĩ...", 
     errorQuota: "Hết hạn mức.", 
-    placeholder: "Hỏi Mồn Lèo AI...", 
+    placeholder: "Nhắn gì đó cho Mồn Lèo...", 
     footerNote: "AI có thể không chính xác.", 
-    confirmReset: "Bạn có chắc chắn muốn xóa toàn bộ dữ liệu?"
+    confirmReset: "Xóa sạch toàn bộ lịch sử?"
   }
 };
 
 const App: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem(STORAGE_SETTINGS);
-    return saved ? JSON.parse(saved) : { apiKey: SYSTEM_API_KEY, language: 'vi', useSearch: false, currentMode: 'standard' };
+    return saved ? JSON.parse(saved) : { apiKey: SYSTEM_API_KEY, language: 'vi', currentMode: 'standard' };
   });
 
   const [threads, setThreads] = useState<ChatThread[]>(() => {
@@ -81,7 +76,7 @@ const App: React.FC = () => {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const ui = translations[settings.language] || translations.en;
+  const ui = translations[settings.language];
   const currentThread = threads.find(t => t.id === currentThreadId);
   const messages = currentThread?.messages || [];
 
@@ -99,32 +94,30 @@ const App: React.FC = () => {
     return () => clearTimeout(timer);
   }, [messages.length, isTyping, scrollToBottom]);
 
+  const toggleHeaderMode = () => {
+    const newMode = settings.currentMode === 'standard' ? 'odh_plugin' : 'standard';
+    setSettings(prev => ({ ...prev, currentMode: newMode }));
+    if (currentThreadId) {
+      setThreads(prev => prev.map(t => t.id === currentThreadId ? { ...t, mode: newMode } : t));
+    }
+  };
+
   const triggerAiResponse = async (activeId: string, text: string, attachment?: Attachment, historyOverride?: Message[]) => {
     const thread = threads.find(t => t.id === activeId);
     if (!thread) return;
     
     const modeToUse = thread.mode || settings.currentMode;
     const history = historyOverride || thread.messages.slice(0, -1);
-
     setIsTyping(true);
     setError(null);
 
-    const aiMsgId = (Date.now() + 1).toString();
+    const aiMsgId = Date.now().toString() + "-ai";
     const aiMsg: Message = { id: aiMsgId, role: Role.MODEL, text: '', timestamp: new Date() };
     setThreads(prev => prev.map(t => t.id === activeId ? { ...t, messages: [...t.messages, aiMsg] } : t));
 
     try {
       let full = '';
-      const stream = sendMessageStream(
-        settings.apiKey, 
-        settings.language, 
-        history, 
-        text, 
-        attachment, 
-        settings.useSearch,
-        modeToUse
-      );
-      
+      const stream = sendMessageStream(settings.apiKey, settings.language, history, text, attachment, modeToUse);
       for await (const chunk of stream) {
         full += chunk;
         setThreads(prev => prev.map(t => t.id === activeId ? {
@@ -140,43 +133,19 @@ const App: React.FC = () => {
     }
   };
 
-  const handleEditMessage = async (msgId: string, newText: string) => {
-    if (!currentThreadId) return;
-    const thread = threads.find(t => t.id === currentThreadId);
-    const msgIndex = thread?.messages.findIndex(m => m.id === msgId) ?? -1;
-    if (msgIndex === -1 || !thread) return;
-
-    const editedMsg = { ...thread.messages[msgIndex], text: newText };
-    const updatedHistory = [...thread.messages.slice(0, msgIndex), editedMsg];
-    
-    setThreads(prev => prev.map(t => t.id === currentThreadId ? { ...t, messages: updatedHistory, lastUpdated: new Date() } : t));
-    await triggerAiResponse(currentThreadId, newText, editedMsg.attachment, updatedHistory.slice(0, -1));
-  };
-
-  const createNewThread = (mode: AppMode = settings.currentMode) => {
-    const newId = Date.now().toString();
-    const newThread: ChatThread = {
-      id: newId,
-      title: mode === 'odh_plugin' ? "ODH Plugin Chat" : ui.newChat,
-      messages: [],
-      lastUpdated: new Date(),
-      mode: mode
-    };
-    setThreads([newThread, ...threads]);
-    setCurrentThreadId(newId);
-    setIsSidebarOpen(false);
-  };
-
   const handleSendMessage = async (text: string, attachment?: Attachment) => {
     let activeId = currentThreadId;
     if (!activeId) {
-      const newId = Date.now().toString();
+      activeId = Date.now().toString();
       const newThread: ChatThread = { 
-        id: newId, title: text.slice(0, 30) || 'New Chat', messages: [], lastUpdated: new Date(), mode: settings.currentMode 
+        id: activeId, 
+        title: text.slice(0, 30) || 'New Chat', 
+        messages: [], 
+        lastUpdated: new Date(),
+        mode: settings.currentMode 
       };
       setThreads(prev => [newThread, ...prev]);
-      activeId = newId;
-      setCurrentThreadId(newId);
+      setCurrentThreadId(activeId);
     }
 
     const userMsg: Message = { id: Date.now().toString(), role: Role.USER, text, timestamp: new Date(), attachment };
@@ -184,20 +153,22 @@ const App: React.FC = () => {
     await triggerAiResponse(activeId, text, attachment);
   };
 
-  const handleReset = () => {
-    if (window.confirm(ui.confirmReset)) {
-      localStorage.clear();
-      window.location.reload();
-    }
+  const startNewChat = (mode: AppMode = 'standard') => {
+    setSettings(prev => ({ ...prev, currentMode: mode }));
+    setCurrentThreadId(null);
+    setIsSidebarOpen(false);
   };
 
+  const activeMode = currentThread?.mode || settings.currentMode;
+
   return (
-    <div className="flex h-screen bg-white overflow-hidden">
+    <div className="flex h-screen bg-white overflow-hidden text-[#171717]">
       <Sidebar 
         threads={threads} 
         currentThreadId={currentThreadId} 
         onSelect={setCurrentThreadId} 
-        onNewChat={() => createNewThread()} 
+        onNewChat={() => startNewChat('standard')} 
+        onNewPluginChat={() => startNewChat('odh_plugin')}
         onDelete={(id, e) => { e.stopPropagation(); setThreads(threads.filter(t => t.id !== id)); if(id === currentThreadId) setCurrentThreadId(null); }}
         onOpenSettings={() => setIsSettingsOpen(true)}
         isOpen={isSidebarOpen}
@@ -207,95 +178,122 @@ const App: React.FC = () => {
       />
       
       <div className="flex-1 flex flex-col h-full relative min-w-0">
-        <header className="h-16 border-b border-gray-100 flex items-center justify-between px-4 md:px-8 bg-white/80 backdrop-blur-md z-10 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-xl flex-shrink-0"><i className="fa-solid fa-bars-staggered"></i></button>
+        <header className="h-14 border-b border-gray-100 flex items-center justify-between px-4 bg-white z-10 shrink-0">
+          <div className="flex items-center gap-2 overflow-hidden">
+            <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-gray-400"><i className="fa-solid fa-bars"></i></button>
             <div className="flex flex-col min-w-0">
-               <h2 className="text-sm font-bold text-gray-900 truncate">{currentThread?.title || ui.title}</h2>
-               {currentThread?.mode === 'odh_plugin' && <span className="text-[8px] font-black text-orange-500 uppercase tracking-widest">ODH Plugin Maker Mode</span>}
+                <h2 className="text-sm font-bold truncate">{currentThread?.title || ui.title}</h2>
+                {activeMode === 'odh_plugin' && <span className="text-[8px] font-black text-indigo-600 uppercase tracking-widest leading-none">ODH PLUGIN MAKER</span>}
             </div>
           </div>
           
-          <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
-             <button onClick={() => setSettings({...settings, useSearch: !settings.useSearch})} className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors ${settings.useSearch ? 'bg-blue-50 text-blue-600 border border-blue-100' : 'bg-gray-100 text-gray-500'}`}>
-                <i className={`fa-solid fa-globe text-[10px]`}></i>
-                <span className="hidden sm:inline text-[9px] font-bold uppercase tracking-widest">{ui.search}</span>
+          <div className="flex items-center gap-2">
+             <button 
+                onClick={toggleHeaderMode} 
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border ${activeMode === 'odh_plugin' ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-100' : 'bg-gray-50 text-gray-400 border-gray-100'}`}
+             >
+                <i className={`fa-solid ${activeMode === 'odh_plugin' ? 'fa-bolt animate-pulse' : 'fa-code-branch'} text-[10px]`}></i>
+                <span className="text-[10px] font-black uppercase tracking-widest">
+                  {activeMode === 'odh_plugin' ? ui.modeLabel : 'STD'}
+                </span>
              </button>
-             <button onClick={() => setIsSettingsOpen(true)} className="p-2 text-gray-400 hover:text-indigo-600 transition-colors"><i className="fa-solid fa-gear"></i></button>
+             <button onClick={() => setIsSettingsOpen(true)} className="p-2 text-gray-400 hover:text-black transition-colors"><i className="fa-solid fa-gear"></i></button>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar bg-[#fafafa] flex flex-col">
-          {!currentThreadId ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center max-w-sm mx-auto">
-              <div className="w-24 h-24 rounded-[2.5rem] overflow-hidden mb-8 shadow-2xl rotate-3 ring-4 ring-white transition-transform hover:rotate-12 hover:scale-105 duration-300">
+        <main className="flex-1 overflow-y-auto custom-scrollbar bg-white flex flex-col">
+          {messages.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-fade-in">
+              <div className="w-24 h-24 rounded-[2.5rem] overflow-hidden mb-8 shadow-2xl rotate-3 ring-8 ring-gray-50 hover:rotate-0 transition-transform duration-500 cursor-pointer">
                 <img src={CAT_AVATAR_URL} alt="Mồn Lèo" className="w-full h-full object-cover" />
               </div>
-              <h3 className="text-2xl font-black text-gray-900 mb-2">{ui.title}</h3>
-              <p className="text-sm text-gray-500">{ui.subtitle}</p>
-              <button onClick={() => createNewThread()} className="mt-8 px-8 py-3 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all">
-                {ui.newChat}
-              </button>
+              <h3 className="text-3xl font-black mb-2 tracking-tighter">{ui.title}</h3>
+              <p className="text-[10px] text-gray-400 uppercase tracking-[0.3em] font-black opacity-60 mb-10">{activeMode === 'odh_plugin' ? 'ODH Plugin Specialist' : ui.subtitle}</p>
+              
+              <div className="flex flex-col sm:flex-row gap-4">
+                 <button onClick={() => startNewChat('standard')} className="px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-black text-white shadow-xl shadow-black/10 hover:scale-105 active:scale-95 transition-all">Chat Thông Thường</button>
+                 <button onClick={() => startNewChat('odh_plugin')} className="px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-indigo-600 text-white shadow-xl shadow-indigo-600/10 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"><i className="fa-solid fa-bolt"></i> ODH Plugin Maker</button>
+              </div>
             </div>
           ) : (
-            <div className="max-w-4xl w-full mx-auto p-4 md:p-10 pb-40 flex-1 flex flex-col">
+            <div className="max-w-3xl w-full mx-auto p-4 md:p-8 pb-32">
               {messages.map((m) => (
-                <ChatMessage 
-                  key={m.id} 
-                  message={m} 
-                  onEdit={(newText) => handleEditMessage(m.id, newText)}
-                />
+                <ChatMessage key={m.id} message={m} onEdit={(newText) => {
+                  const newHistory = messages.filter(msg => msg.id !== m.id && messages.indexOf(msg) < messages.indexOf(m));
+                  setThreads(prev => prev.map(t => t.id === currentThreadId ? { ...t, messages: [...newHistory, { ...m, text: newText }] } : t));
+                  triggerAiResponse(currentThreadId!, newText, m.attachment, newHistory);
+                }} />
               ))}
               {isTyping && (
-                <div className="flex justify-start mb-6 animate-fade-in">
-                  <div className="bg-white px-4 py-3 rounded-2xl border border-gray-100 shadow-sm flex gap-3 items-center text-[10px] font-bold text-indigo-400 animate-pulse">
-                    <div className="w-5 h-5 rounded-full overflow-hidden shrink-0">
-                      <img src={CAT_AVATAR_URL} alt="Thinking" className="w-full h-full object-cover" />
-                    </div>
-                    {ui.typing}
+                <div className="flex gap-3 mb-6 animate-pulse">
+                  <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 ring-2 ring-gray-100">
+                    <img src={CAT_AVATAR_URL} alt="Thinking" className="w-full h-full object-cover" />
                   </div>
+                  <div className="text-[10px] font-black text-gray-300 uppercase mt-2.5 tracking-widest">{ui.typing}</div>
                 </div>
               )}
-              {error && (
-                <div className="bg-red-50 text-red-600 p-6 rounded-2xl text-xs font-bold text-center mb-6 shadow-sm border border-red-100 animate-fade-in flex flex-col gap-3">
-                  <i className="fa-solid fa-triangle-exclamation text-xl"></i>
-                  {error}
-                </div>
-              )}
-              <div ref={messagesEndRef} className="h-20 w-full shrink-0" />
+              {error && <div className="bg-red-50 text-red-500 p-5 rounded-2xl text-[10px] font-black uppercase tracking-widest text-center mb-6 border border-red-100">{error}</div>}
+              <div ref={messagesEndRef} />
             </div>
           )}
         </main>
         
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#fafafa] via-[#fafafa] to-transparent pt-10 pointer-events-none">
-          <div className="pointer-events-auto">
-            <ChatInput onSendMessage={handleSendMessage} disabled={isTyping} placeholder={currentThread?.mode === 'odh_plugin' ? "Mô tả tính năng cho Plugin..." : ui.placeholder} footerNote={ui.footerNote} />
+        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 bg-gradient-to-t from-white via-white to-transparent pointer-events-none">
+          <div className="max-w-4xl mx-auto pointer-events-auto">
+             <ChatInput onSendMessage={handleSendMessage} disabled={isTyping} placeholder={activeMode === 'odh_plugin' ? 'Ví dụ: Hãy viết một plugin UI cho ODH...' : ui.placeholder} footerNote={ui.footerNote} />
           </div>
         </div>
       </div>
 
       {isSettingsOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-10 shadow-2xl animate-fade-in">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-black text-gray-900">{ui.settings}</h3>
-              <button onClick={() => setIsSettingsOpen(false)} className="text-gray-400 hover:text-gray-600"><i className="fa-solid fa-xmark text-xl"></i></button>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-[3rem] p-10 shadow-2xl animate-fade-in border border-gray-100">
+            <div className="flex justify-between items-center mb-10">
+              <h3 className="text-2xl font-black tracking-tight">{ui.settings}</h3>
+              <button onClick={() => setIsSettingsOpen(false)} className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 transition-colors"><i className="fa-solid fa-xmark"></i></button>
             </div>
-            <div className="space-y-6">
+            <div className="space-y-8">
               <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 ml-1">{ui.apiKey}</label>
-                <input type="password" value={settings.apiKey} onChange={(e) => setSettings({...settings, apiKey: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-3 px-5 focus:ring-4 focus:ring-indigo-500/10 outline-none font-mono text-xs transition-all" />
+                <label className="block text-[10px] font-black text-gray-400 uppercase mb-3 tracking-widest">{ui.apiKey}</label>
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    value={settings.apiKey} 
+                    onChange={(e) => setSettings({...settings, apiKey: e.target.value})} 
+                    className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl py-4 px-5 text-sm font-mono outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-inner" 
+                    placeholder="Dán mã AIza... vào đây"
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none">
+                    <i className="fa-solid fa-key"></i>
+                  </div>
+                </div>
               </div>
               <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 ml-1">{ui.lang}</label>
-                <select value={settings.language} onChange={(e) => setSettings({...settings, language: e.target.value as Language})} className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-3 px-5 outline-none text-xs font-bold appearance-none cursor-pointer">
-                  <option value="vi">TIẾNG VIỆT</option>
-                  <option value="en">ENGLISH</option>
+                <label className="block text-[10px] font-black text-gray-400 uppercase mb-3 tracking-widest">{ui.lang}</label>
+                <select 
+                  value={settings.language} 
+                  onChange={(e) => setSettings({...settings, language: e.target.value as Language})} 
+                  className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl py-4 px-5 text-xs font-black uppercase tracking-widest outline-none appearance-none cursor-pointer focus:border-indigo-500 shadow-inner"
+                >
+                  <option value="vi">Tiếng Việt</option>
+                  <option value="en">English</option>
                 </select>
               </div>
-              <div className="pt-4 flex flex-col gap-3">
-                <button onClick={() => setIsSettingsOpen(false)} className="w-full bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-xl shadow-indigo-100 transition-all text-xs uppercase tracking-widest">{ui.save}</button>
-                <button onClick={handleReset} className="w-full bg-red-50 text-red-600 font-black py-4 rounded-2xl border border-red-100 text-[10px] uppercase tracking-widest"><i className="fa-solid fa-trash-can mr-2"></i>{ui.reset}</button>
+              <div className="pt-6 flex flex-col gap-3">
+                <button 
+                  onClick={() => setIsSettingsOpen(false)} 
+                  className="w-full bg-black text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-black/20 hover:scale-[1.02] active:scale-95 transition-all"
+                >
+                  {ui.save}
+                </button>
+                <button 
+                  onClick={() => { if(window.confirm(ui.confirmReset)) { localStorage.clear(); window.location.reload(); } }} 
+                  className="w-full text-red-500 font-black py-2 text-[9px] uppercase tracking-widest opacity-50 hover:opacity-100 transition-opacity"
+                >
+                  {ui.reset}
+                </button>
               </div>
             </div>
           </div>

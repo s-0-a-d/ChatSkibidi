@@ -7,6 +7,7 @@ interface SidebarProps {
   currentThreadId: string | null;
   onSelect: (id: string) => void;
   onNewChat: () => void;
+  onNewPluginChat: () => void;
   onDelete: (id: string, e: React.MouseEvent) => void;
   onOpenSettings: () => void;
   isOpen: boolean;
@@ -22,6 +23,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   currentThreadId, 
   onSelect, 
   onNewChat, 
+  onNewPluginChat,
   onDelete, 
   onOpenSettings,
   isOpen,
@@ -30,47 +32,39 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   return (
     <>
-      {isOpen && <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden" onClick={onClose} />}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#0f1115] text-gray-300 transition-transform duration-500 cubic-bezier(0.16, 1, 0.3, 1) ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 md:flex md:flex-col shrink-0 border-r border-white/5`}>
-        <div className="p-6 flex flex-col h-full">
-          <div className="flex items-center gap-3 mb-10 px-2">
-            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-indigo-600/10 rotate-3 ring-2 ring-indigo-500/20">
-              <img src={CAT_AVATAR_URL} alt="Logo" className="w-full h-full object-cover" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-black text-white tracking-tight">Mồn Lèo AI</span>
-              <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest opacity-70">By Thanh</span>
-            </div>
+      {isOpen && <div className="fixed inset-0 bg-black/40 z-40 md:hidden" onClick={onClose} />}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#f9f9f9] border-r border-gray-100 transition-transform md:relative md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="flex flex-col h-full p-4">
+          <div className="flex items-center gap-3 mb-8 px-2">
+            <img src={CAT_AVATAR_URL} alt="Logo" className="w-8 h-8 rounded-lg object-cover" />
+            <span className="font-bold text-sm">Mồn Lèo AI</span>
           </div>
 
-          <button onClick={onNewChat} className="w-full flex items-center justify-center gap-3 px-4 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl transition-all shadow-xl shadow-indigo-900/20 mb-10 active:scale-95 group">
-            <i className="fa-solid fa-plus text-xs group-hover:rotate-90 transition-transform"></i>
-            <span className="text-xs font-black tracking-widest uppercase">{ui.newChat}</span>
-          </button>
-
-          <div className="flex-1 overflow-y-auto custom-scrollbar -mx-2 px-2 space-y-2">
-            <h3 className="px-4 text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 opacity-50">{ui.history}</h3>
-            {threads.length === 0 ? (
-              <div className="px-4 py-12 text-center opacity-30"><p className="text-[10px] font-bold uppercase tracking-widest">{ui.noChats}</p></div>
-            ) : (
-              threads.map((thread) => (
-                <div key={thread.id} onClick={() => onSelect(thread.id)} className={`group flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all border ${currentThreadId === thread.id ? 'bg-white/10 border-white/10 text-white' : 'border-transparent hover:bg-white/5 text-gray-500 hover:text-gray-300'}`}>
-                  <div className="flex items-center gap-3 min-w-0">
-                    <i className={`fa-solid ${thread.mode === 'odh_plugin' ? 'fa-code text-orange-400' : 'fa-comment-dots text-indigo-400'} text-xs ${currentThreadId === thread.id ? 'opacity-100' : 'opacity-40 group-hover:opacity-70'}`}></i>
-                    <span className="text-xs font-bold truncate tracking-tight">{thread.title}</span>
-                  </div>
-                  <button onClick={(e) => onDelete(thread.id, e)} className="p-2 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all"><i className="fa-solid fa-trash-can text-[10px]"></i></button>
-                </div>
-              ))
-            )}
-          </div>
-
-          <div className="mt-auto pt-6 border-t border-white/5">
-            <button onClick={onOpenSettings} className="w-full flex items-center gap-3 px-4 py-4 text-gray-400 hover:text-white hover:bg-white/5 rounded-2xl transition-all text-xs font-black uppercase tracking-widest group">
-              <i className="fa-solid fa-gear text-indigo-500 group-hover:rotate-45 transition-transform"></i>
-              {ui.settings}
+          <div className="flex flex-col gap-2 mb-6">
+            <button onClick={onNewChat} className="w-full py-3 bg-black text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-2">
+              <i className="fa-solid fa-plus text-[10px]"></i>{ui.newChat}
+            </button>
+            <button onClick={onNewPluginChat} className="w-full py-2 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-100 transition-all">
+              <i className="fa-solid fa-code mr-2"></i>ODH Plugin Chat
             </button>
           </div>
+
+          <div className="flex-1 overflow-y-auto custom-scrollbar space-y-1">
+            <h4 className="px-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">{ui.history}</h4>
+            {threads.map((thread) => (
+              <div key={thread.id} onClick={() => onSelect(thread.id)} className={`group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${currentThreadId === thread.id ? 'bg-white shadow-sm border border-gray-100' : 'hover:bg-gray-200/50'}`}>
+                <div className="flex items-center gap-2 min-w-0">
+                  <i className={`fa-solid ${thread.mode === 'odh_plugin' ? 'fa-bolt text-indigo-400' : 'fa-comment-dots text-gray-300'} text-[10px]`}></i>
+                  <span className="text-xs font-medium truncate">{thread.title}</span>
+                </div>
+                <button onClick={(e) => onDelete(thread.id, e)} className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500"><i className="fa-solid fa-xmark text-[10px]"></i></button>
+              </div>
+            ))}
+          </div>
+
+          <button onClick={onOpenSettings} className="mt-auto pt-4 border-t border-gray-100 text-left px-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-black">
+            <i className="fa-solid fa-gear mr-2"></i>{ui.settings}
+          </button>
         </div>
       </aside>
     </>
