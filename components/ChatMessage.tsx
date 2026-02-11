@@ -106,11 +106,21 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onEdit }) => {
                     ref={editRef}
                     value={editText}
                     onChange={(e) => setEditText(e.target.value)}
-                    className="w-full bg-white border border-indigo-200 rounded-xl p-2 outline-none text-sm font-medium resize-none overflow-hidden shadow-inner"
+                    className="w-full bg-white border border-indigo-200 rounded-xl p-2 outline-none text-sm font-medium resize-none overflow-hidden shadow-inner focus:ring-2 focus:ring-indigo-500/20"
                   />
-                  <div className="flex justify-end gap-3">
-                    <button onClick={() => { setIsEditing(false); setEditText(message.text); }} className="text-[10px] font-black uppercase text-gray-400 hover:text-red-500 transition-colors">Hủy</button>
-                    <button onClick={handleSave} className="text-[10px] font-black uppercase text-indigo-600 hover:text-indigo-800 transition-colors">Lưu</button>
+                  <div className="flex justify-end gap-4 items-center mt-1">
+                    <button 
+                      onClick={() => { setIsEditing(false); setEditText(message.text); }} 
+                      className="text-[10px] font-black uppercase text-gray-400 hover:text-red-500 transition-colors"
+                    >
+                      Hủy
+                    </button>
+                    <button 
+                      onClick={handleSave} 
+                      className="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
+                    >
+                      Lưu & Gửi
+                    </button>
                   </div>
                 </div>
               ) : (
@@ -120,7 +130,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onEdit }) => {
               )}
             </div>
 
-            {/* Nút tác vụ ẩn hiện khi hover, không chiếm diện tích trong bubble */}
             {!isEditing && (
               <div className={`absolute bottom-0 ${isUser ? 'right-full mr-2' : 'left-full ml-2'} opacity-0 group-hover/msg-row:opacity-100 transition-opacity flex items-center gap-2`}>
                 {!isUser ? (

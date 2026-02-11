@@ -12,7 +12,7 @@ const STORAGE_SETTINGS = 'mon_leo_settings_v7';
 
 const translations: Record<Language, any> = {
   en: { title: "Mồn Lèo AI", subtitle: "AI Assistant by Thanh", newChat: "New Chat", history: "Chat History", settings: "Settings", apiKey: "API Key", lang: "Language", search: "Google Search", reset: "Reset Data", cancel: "Cancel", save: "Save", welcome: "Hello! Mồn Lèo AI is ready.", typing: "Thinking...", errorQuota: "Quota exceeded.", placeholder: "Ask anything...", footerNote: "AI may be inaccurate.", modeLabel: "Mode" },
-  vi: { title: "Mồn Lèo AI", subtitle: "Trợ lý AI của Thanh", newChat: "Chat mới", history: "Lịch sử", settings: "Cài đặt", apiKey: "API Key", lang: "Ngôn ngữ", search: "Tìm kiếm", reset: "Xóa dữ liệu", cancel: "Hủy", save: "Lưu", welcome: "Chào bạn! Mồn Lèo AI đã sẵn sàng.", typing: "Đang nghĩ...", errorQuota: "Hết hạn mức.", placeholder: "Hỏi Mồn Lèo AI...", footerNote: "AI có thể không chính xác.", modeLabel: "Chế độ" },
+  vi: { title: "Mồn Lèo AI", subtitle: "Trợ lý AI của Thanh", newChat: "Chat mới", history: "Lịch sử", settings: "Cài đặt", apiKey: "API Key", lang: "Ngôn ngữ", search: "Tìm kiếm", reset: "Xóa dữ liệu", cancel: "Hủy", save: "Lưu & Gửi", welcome: "Chào bạn! Mồn Lèo AI đã sẵn sàng.", typing: "Đang nghĩ...", errorQuota: "Hết hạn mức.", placeholder: "Hỏi Mồn Lèo AI...", footerNote: "AI có thể không chính xác.", modeLabel: "Chế độ" },
   fr: { title: "Mồn Lèo AI", subtitle: "Assistant par Thanh", newChat: "Nouveau Chat", history: "Historique", settings: "Paramètres", apiKey: "Clé API", lang: "Langue", search: "Recherche", reset: "Réinitialiser", cancel: "Annuler", save: "Enregistrer", welcome: "Bonjour !", typing: "Réflexion...", errorQuota: "Quota épuisé.", placeholder: "Posez une question...", footerNote: "L'IA peut être inexacte.", modeLabel: "Mode" },
   ja: { title: "Mồn Lèo AI", subtitle: "ThanhのAI", newChat: "新規チャット", history: "履歴", settings: "設定", apiKey: "APIキー", lang: "言語", search: "検索", reset: "リセット", cancel: "キャンセル", save: "保存", welcome: "こんにちは！", typing: "考え中...", errorQuota: "クォータ制限。", placeholder: "何か聞いてください...", footerNote: "不正確な場合があります。", modeLabel: "モード" },
   ko: { title: "Mồn Lèo AI", subtitle: "Thanh의 AI", newChat: "새 채팅", history: "기록", settings: "설정", apiKey: "API 키", lang: "언어", search: "검색", reset: "초기화", cancel: "취소", save: "저장", welcome: "안녕하세요!", typing: "생각 중...", errorQuota: "할당량 초과.", placeholder: "무엇이든 물어보세요...", footerNote: "부정확할 수 있습니다.", modeLabel: "모드" },
@@ -23,9 +23,9 @@ const translations: Record<Language, any> = {
   pt: { title: "Mồn Lèo AI", subtitle: "Assistente do Thanh", newChat: "Novo Chat", history: "Histórico", settings: "Ajustes", apiKey: "Chave API", lang: "Idioma", search: "Pesquisa", reset: "Resetar", cancel: "Cancelar", save: "Salvar", welcome: "Olá!", typing: "Pensando...", errorQuota: "Cota excedida.", placeholder: "Pergunte algo...", footerNote: "IA pode falhar.", modeLabel: "Modo" },
   ru: { title: "Mồn Lèo AI", subtitle: "Ассистент Thanh", newChat: "Новый чат", history: "История", settings: "Настройки", apiKey: "Ключ API", lang: "Язык", search: "Поиск", reset: "Сброс", cancel: "Отмена", save: "Ок", welcome: "Привет!", typing: "Думаю...", errorQuota: "Лимит исчерпан.", placeholder: "Спросите о чем угодно...", footerNote: "ИИ может ошибаться.", modeLabel: "Режим" },
   ar: { title: "Mồn Lèo AI", subtitle: "مساعد Thanh", newChat: "دردشة جديدة", history: "السجل", settings: "الإعدادات", apiKey: "مفتاح API", lang: "اللغة", search: "بحث", reset: "إعادة تعيين", cancel: "إلغاء", save: "حفظ", welcome: "أهلاً بك!", typing: "يفكر...", errorQuota: "تجاوز الحصة.", placeholder: "اسأل أي شيء...", footerNote: "قد يكون الذكاء الاصطناعي غير دقيق.", modeLabel: "الوضع" },
-  th: { title: "Mồn Lèo AI", subtitle: "ผู้ช่วยของ Thanh", newChat: "แชทใหม่", history: "ประวัติ", settings: "ตั้งค่า", apiKey: "รหัส API", lang: "ภาษา", search: "ค้นหา", reset: "รีเซ็ต", cancel: "ยกเลิก", save: "บันทึก", welcome: "สวัสดี!", typing: "กำลังคิด...", errorQuota: "โควตาเต็ม", placeholder: "ถามอะไรก็ได้...", footerNote: "AI อาจให้ข้อมูลผิด", modeLabel: "โหมด" },
-  id: { title: "Mồn Lèo AI", subtitle: "Asisten Thanh", newChat: "Chat Baru", history: "Riwayat", settings: "Setelan", apiKey: "Kunci API", lang: "Bahasa", search: "Cari", reset: "Reset", cancel: "Batal", save: "Simpan", welcome: "Halo!", typing: "Berpikir...", errorQuota: "Kuota habis.", placeholder: "Tanya apa saja...", footerNote: "AI mungkin tidak akurat.", modeLabel: "Mode" },
-  hi: { title: "Mồn Lèo AI", subtitle: "Thanh के सहायक", newChat: "नया चैट", history: "इतिहास", settings: "सेटिंग्स", apiKey: "API कुंजी", lang: "भाषा", search: "खोज", reset: "रीसेट", cancel: "रद्द करें", save: "सहेजें", welcome: "नमस्ते!", typing: "सोच रहा है...", errorQuota: "कोटा समाप्त।", placeholder: "कुछ भी पूछें...", footerNote: "AI गलत हो सकता है।", modeLabel: "मोड" },
+  th: { title: "Mồn Lèo AI", subtitle: "ผู้ช่วย của Thanh", newChat: "แชทใหม่", history: "ประวัติ", settings: "ตั้งค่า", apiKey: "รหัส API", lang: "ภาษา", search: "ค้นหา", reset: "รีเซ็ต", cancel: "ยกเลิก", save: "บันทึก", welcome: "สวัสดี!", typing: "กำลังคิด...", errorQuota: "โควตาเต็ม", placeholder: "ถามอะไรก็ได้...", footerNote: "AI อาจให้ข้อมูลผิด", modeLabel: "โหมด" },
+  id: { title: "Mồn Lèo AI", subtitle: "Asisten Thanh", newChat: "Chat Baru", history: "Riwayat", settings: "Setelan", apiKey: "Kunci API", lang: "Bahasa", search: "Cari", reset: "Reset", cancel: "Batal", save: "Simpan", welcome: "Halo!", typing: "Berpikir...", errorQuota: "Kuota habis.", placeholder: "Tanya apa saja...", footerNote: "AI mungkin không akurat.", modeLabel: "Mode" },
+  hi: { title: "Mồn Lèo AI", subtitle: "Thanh के सहायक", newChat: "नया चैट", history: "इतिहास", settings: "सेटिंग्स", apiKey: "API कुंजी", lang: "भाषा", search: "खoz", reset: "रीसेट", cancel: "रद्द करें", save: "सहेजें", welcome: "नमस्ते!", typing: "सोच रहा है...", errorQuota: "कोटा समाप्त।", placeholder: "कुछ भी पूछें...", footerNote: "AI गलत हो सकता है।", modeLabel: "मोड" },
   tr: { title: "Mồn Lèo AI", subtitle: "Thanh Asistanı", newChat: "Yeni Sohbet", history: "Geçmiş", settings: "Ayarlar", apiKey: "API Anahtarı", lang: "Dil", search: "Arama", reset: "Sıfırla", cancel: "İptal", save: "Kaydet", welcome: "Merhaba!", typing: "Düşünüyor...", errorQuota: "Kota aşıldı.", placeholder: "Bir şey sor...", footerNote: "Yapay zeka hatalı olabilir.", modeLabel: "Mod" },
   nl: { title: "Mồn Lèo AI", subtitle: "Assistent van Thanh", newChat: "Nieuwe Chat", history: "Geschiedenis", settings: "Instellingen", apiKey: "API-sleutel", lang: "Taal", search: "Zoeken", reset: "Reset", cancel: "Annuleer", save: "Opslaan", welcome: "Hallo!", typing: "Denkt na...", errorQuota: "Quotun op.", placeholder: "Vraag iets...", footerNote: "AI kan onnauwkeurig zijn.", modeLabel: "Modus" }
 };
@@ -80,11 +80,63 @@ const App: React.FC = () => {
     scrollToBottom(true);
   }, [currentThreadId, scrollToBottom]);
 
-  const handleEditMessage = (msgId: string, newText: string) => {
-    setThreads(prev => prev.map(t => t.id === currentThreadId ? {
-      ...t,
-      messages: t.messages.map(m => m.id === msgId ? { ...m, text: newText } : m)
-    } : t));
+  // Logic nhận phản hồi từ AI dùng chung cho cả gửi mới và chỉnh sửa
+  const triggerAiResponse = async (activeId: string, text: string, attachment?: Attachment, historyOverride?: Message[]) => {
+    const thread = threads.find(t => t.id === activeId);
+    const modeToUse = thread?.mode || settings.currentMode;
+    const history = historyOverride || thread?.messages.slice(0, -1) || [];
+
+    setIsTyping(true);
+    setError(null);
+
+    const aiMsgId = (Date.now() + 1).toString();
+    const aiMsg: Message = { id: aiMsgId, role: Role.MODEL, text: '', timestamp: new Date() };
+    setThreads(prev => prev.map(t => t.id === activeId ? { ...t, messages: [...t.messages, aiMsg] } : t));
+
+    try {
+      let full = '';
+      const stream = sendMessageStream(
+        settings.apiKey, 
+        settings.language, 
+        history, 
+        text, 
+        attachment, 
+        settings.useSearch,
+        modeToUse
+      );
+      
+      for await (const chunk of stream) {
+        full += chunk;
+        setThreads(prev => prev.map(t => t.id === activeId ? {
+          ...t,
+          messages: t.messages.map(m => m.id === aiMsgId ? { ...m, text: full } : m)
+        } : t));
+      }
+    } catch (err: any) {
+      setError(err.message === "QUOTA_EXHAUSTED" ? ui.errorQuota : err.message);
+      setThreads(prev => prev.map(t => t.id === activeId ? { ...t, messages: t.messages.filter(m => m.id !== aiMsgId) } : t));
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  const handleEditMessage = async (msgId: string, newText: string) => {
+    if (!currentThreadId) return;
+    const thread = threads.find(t => t.id === currentThreadId);
+    if (!thread) return;
+
+    const msgIndex = thread.messages.findIndex(m => m.id === msgId);
+    if (msgIndex === -1) return;
+
+    // Cập nhật tin nhắn đã sửa và XÓA toàn bộ các tin nhắn sau nó (phản hồi cũ)
+    const editedMsg = { ...thread.messages[msgIndex], text: newText };
+    const updatedHistory = [...thread.messages.slice(0, msgIndex), editedMsg];
+    
+    setThreads(prev => prev.map(t => t.id === currentThreadId ? { ...t, messages: updatedHistory, lastUpdated: new Date() } : t));
+
+    // Yêu cầu AI phản hồi lại từ điểm này
+    const historyForAi = updatedHistory.slice(0, -1);
+    await triggerAiResponse(currentThreadId, newText, editedMsg.attachment, historyForAi);
   };
 
   const createNewThread = (mode: AppMode = settings.currentMode) => {
@@ -126,41 +178,9 @@ const App: React.FC = () => {
     }
 
     const userMsg: Message = { id: Date.now().toString(), role: Role.USER, text, timestamp: new Date(), attachment };
-    const currentHistory = threads.find(t => t.id === activeId)?.messages || [];
-
     setThreads(prev => prev.map(t => t.id === activeId ? { ...t, messages: [...t.messages, userMsg], lastUpdated: new Date() } : t));
-    setIsTyping(true);
-    setError(null);
-
-    const aiMsgId = (Date.now() + 1).toString();
-    const aiMsg: Message = { id: aiMsgId, role: Role.MODEL, text: '', timestamp: new Date() };
-    setThreads(prev => prev.map(t => t.id === activeId ? { ...t, messages: [...t.messages, aiMsg] } : t));
-
-    try {
-      let full = '';
-      const stream = sendMessageStream(
-        settings.apiKey, 
-        settings.language, 
-        currentHistory, 
-        text, 
-        attachment, 
-        settings.useSearch,
-        modeToUse
-      );
-      
-      for await (const chunk of stream) {
-        full += chunk;
-        setThreads(prev => prev.map(t => t.id === activeId ? {
-          ...t,
-          messages: t.messages.map(m => m.id === aiMsgId ? { ...m, text: full } : m)
-        } : t));
-      }
-    } catch (err: any) {
-      setError(err.message === "QUOTA_EXHAUSTED" ? ui.errorQuota : err.message);
-      setThreads(prev => prev.map(t => t.id === activeId ? { ...t, messages: t.messages.filter(m => m.id !== aiMsgId) } : t));
-    } finally {
-      setIsTyping(false);
-    }
+    
+    await triggerAiResponse(activeId, text, attachment);
   };
 
   const handleReset = () => {
