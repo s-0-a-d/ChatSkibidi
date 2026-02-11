@@ -4,7 +4,11 @@ export enum Role {
   MODEL = 'model',
 }
 
-export type Language = 'en' | 'vi' | 'fr' | 'ja' | 'ko' | 'zh';
+export type Language = 
+  | 'en' | 'vi' | 'fr' | 'ja' | 'ko' | 'zh' 
+  | 'es' | 'de' | 'it' | 'ru' | 'pt' | 'ar' 
+  | 'th' | 'id' | 'hi' | 'tr' | 'nl';
+
 export type AppMode = 'standard' | 'odh_plugin';
 
 export interface Attachment {
